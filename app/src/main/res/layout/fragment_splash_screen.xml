@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data></data>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/primaryColor"
+        android:gravity="center"
+        android:orientation="vertical"
+        tools:context=".ui.SplashScreenFragment">
+
+        <ImageView
+            android:id="@+id/logo"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/height_of_logo"
+            android:src="@drawable/elife_logo" />
+
+        <TextView
+            android:id="@+id/appName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/ubuntu_bold"
+            android:includeFontPadding="false"
+            android:text="@string/e_life"
+            android:textAlignment="center"
+            android:textColor="@color/white"
+            android:textSize="@dimen/app_name_txt_size"
+            android:textStyle="italic" />
+
+        <TextView
+            android:id="@+id/slogan"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/layout_margin_top_10dp"
+            android:fontFamily="@font/ubuntu_bold"
+            android:includeFontPadding="false"
+            android:text="@string/slogan"
+            android:textAlignment="center"
+            android:textColor="@color/white"
+            android:textSize="@dimen/title_txt_size"
+            android:textStyle="italic" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/startBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/layout_margin_vertical"
+            android:background="@drawable/button_background"
+            android:fontFamily="@font/ubuntu_bold"
+            android:includeFontPadding="false"
+            android:text="@string/start"
+            android:textAllCaps="false"
+            android:textColor="@color/primaryColor"
+            android:textSize="@dimen/content_txt_size" />
+
+    </LinearLayout>
+</layout>
