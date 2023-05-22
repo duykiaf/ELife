@@ -1,14 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".ui.AudiosListFragment">
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <data>
+
+    </data>
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+        android:orientation="vertical"
+        tools:context=".ui.AudiosListFragment">
 
-</FrameLayout>
+        <include
+            android:id="@+id/appBarFragment"
+            layout="@layout/fragment_app_bar" />
+
+        <include
+            android:id="@+id/searchFragment"
+            layout="@layout/fragment_search_layout"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/topSettingLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/layout_margin_vertical"
+            android:paddingHorizontal="@dimen/layout_margin_horizontal">
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/playAllBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/card_background"
+                android:fontFamily="@font/ubuntu_medium"
+                android:includeFontPadding="false"
+                android:text="@string/play_all"
+                android:textAllCaps="false"
+                android:textColor="@color/primaryColor"
+                android:textSize="@dimen/content_txt_size" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/repeatSettingBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/layout_margin_horizontal"
+                android:layout_weight="1"
+                android:background="@drawable/card_background"
+                android:fontFamily="@font/ubuntu_medium"
+                android:includeFontPadding="false"
+                android:text="@string/repeat_setting"
+                android:textAllCaps="false"
+                android:textColor="@color/primaryColor"
+                android:textSize="@dimen/content_txt_size" />
+
+        </LinearLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/audiosRcv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:listitem="@layout/audio_item_layout" />
+
+    </LinearLayout>
+</layout>

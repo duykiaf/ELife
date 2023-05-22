@@ -5,4 +5,13 @@
     <string name="e_life">E-Life</string>
     <string name="slogan">Listen to English anywhere</string>
     <string name="start">Start</string>
+    <string name="topics">Topics</string>
+    <string name="search">Search</string>
+    <string name="bookmarks">Bookmarks</string>
+    <string name="topic_name">Topic name</string>
+    <string name="play_all">Play all</string>
+    <string name="repeat_setting">Repeat setting</string>
+    <string name="this_is_audio_title">This is audio title</string>
+    <string name="audio_duration">1:30</string>
+    <string name="speed_default">1x</string>
 </resources>

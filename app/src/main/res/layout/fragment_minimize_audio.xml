@@ -1,14 +1,160 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".ui.MinimizeAudioFragment">
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <data>
+
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+        android:layout_height="wrap_content"
+        android:background="@drawable/minimize_audio_background"
+        android:padding="@dimen/padding_20dp"
+        tools:context=".ui.MinimizeAudioFragment">
 
-</FrameLayout>
+        <TextView
+            android:id="@+id/audioTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/ubuntu_bold"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:text="@string/this_is_audio_title"
+            android:textColor="@color/primaryColor"
+            android:textSize="@dimen/title_txt_size"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/closeIcon"/>
+
+        <ImageView
+            android:id="@+id/closeIcon"
+            android:layout_width="@dimen/small_icon_size"
+            android:layout_height="@dimen/small_icon_size"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/ic_close"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/audioSpeed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/ubuntu_bold"
+            android:includeFontPadding="false"
+            android:text="@string/speed_default"
+            android:textColor="@color/primaryColor"
+            android:textSize="@dimen/sub_content_txt_size"
+            app:layout_constraintBottom_toBottomOf="@id/bookmarkIcon"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/bookmarkIcon" />
+
+        <ImageView
+            android:id="@+id/bookmarkIcon"
+            android:layout_width="@dimen/small_icon_size"
+            android:layout_height="@dimen/small_icon_size"
+            android:layout_marginTop="@dimen/layout_margin_top_10dp"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/ic_bookmark_border"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/closeIcon"
+            app:tint="@color/primaryColor" />
+
+        <SeekBar
+            android:id="@+id/seekBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/layout_margin_top_10dp"
+            android:progressTint="@color/primaryColor"
+            android:thumbTint="@color/primaryColor"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/bookmarkIcon" />
+
+        <TextView
+            android:id="@+id/audioCurrentTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/layout_margin_top_10dp"
+            android:fontFamily="@font/ubuntu_bold"
+            android:includeFontPadding="false"
+            android:text="@string/audio_duration"
+            android:textColor="@color/primaryColor"
+            android:textSize="@dimen/sub_content_txt_size"
+            app:layout_constraintStart_toStartOf="@id/seekBar"
+            app:layout_constraintTop_toBottomOf="@id/seekBar" />
+
+        <TextView
+            android:id="@+id/audioDuration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/layout_margin_top_10dp"
+            android:fontFamily="@font/ubuntu_regular"
+            android:includeFontPadding="false"
+            android:text="@string/audio_duration"
+            android:textColor="@color/primaryColor"
+            android:textSize="@dimen/sub_content_txt_size"
+            app:layout_constraintEnd_toEndOf="@id/seekBar"
+            app:layout_constraintTop_toBottomOf="@id/seekBar" />
+
+        <ImageView
+            android:id="@+id/loopIcon"
+            android:layout_width="@dimen/small_icon_size"
+            android:layout_height="@dimen/small_icon_size"
+            android:layout_marginTop="@dimen/layout_margin_top_10dp"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/ic_loop"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/audioCurrentTime"
+            app:tint="@color/primaryColor" />
+
+        <ImageView
+            android:id="@+id/previousIcon"
+            android:layout_width="@dimen/large_icon_size"
+            android:layout_height="@dimen/large_icon_size"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/ic_skip_previous"
+            app:layout_constraintBottom_toBottomOf="@id/loopIcon"
+            app:layout_constraintEnd_toStartOf="@id/pauseIcon"
+            app:layout_constraintStart_toEndOf="@id/loopIcon"
+            app:layout_constraintTop_toTopOf="@id/loopIcon"
+            app:tint="@color/primaryColor" />
+
+        <ImageView
+            android:id="@+id/pauseIcon"
+            android:layout_width="@dimen/large_icon_size"
+            android:layout_height="@dimen/large_icon_size"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/ic_pause_circle_outline"
+            app:layout_constraintBottom_toBottomOf="@id/loopIcon"
+            app:layout_constraintEnd_toStartOf="@id/nextIcon"
+            app:layout_constraintStart_toEndOf="@id/previousIcon"
+            app:layout_constraintTop_toTopOf="@id/loopIcon"
+            app:tint="@color/primaryColor" />
+
+        <ImageView
+            android:id="@+id/nextIcon"
+            android:layout_width="@dimen/large_icon_size"
+            android:layout_height="@dimen/large_icon_size"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/ic_skip_next"
+            app:layout_constraintBottom_toBottomOf="@id/loopIcon"
+            app:layout_constraintEnd_toStartOf="@id/launchIcon"
+            app:layout_constraintStart_toEndOf="@id/pauseIcon"
+            app:layout_constraintTop_toTopOf="@id/loopIcon"
+            app:tint="@color/primaryColor" />
+
+        <ImageView
+            android:id="@+id/launchIcon"
+            android:layout_width="@dimen/small_icon_size"
+            android:layout_height="@dimen/small_icon_size"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/ic_launch"
+            app:layout_constraintBottom_toBottomOf="@id/loopIcon"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/loopIcon"
+            app:tint="@color/primaryColor" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>
