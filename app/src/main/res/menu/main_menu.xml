@@ -4,14 +4,12 @@
     <item
         android:id="@+id/searchItem"
         android:icon="@drawable/ic_search"
-        android:iconTint="@color/white"
         android:title="@string/search"
         app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/bookmarksItem"
         android:icon="@drawable/ic_bookmarks"
-        android:iconTint="@color/white"
         android:title="@string/bookmarks"
         app:showAsAction="ifRoom" />
 </menu>
