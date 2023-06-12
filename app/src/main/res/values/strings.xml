@@ -14,4 +14,19 @@
     <string name="this_is_audio_title">This is audio title</string>
     <string name="audio_duration">1:30</string>
     <string name="speed_default">1x</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="playback_speed">Playback speed</string>
+    <string name="_0_5x">0.5x</string>
+    <string name="_0_75x">0.75x</string>
+    <string name="_1x_normal">1x (Normal)</string>
+    <string name="_1_25x">1.25x</string>
+    <string name="_1_5x">1.5x</string>
+    <string name="example_10">10</string>
+    <string name="maximum_number_of_repetitions">(The maximum number of repetitions is 20)</string>
+    <string name="multiples_line_text">
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+    </string>
+    <string name="select_language">Select language:</string>
+    <string name="apply">Apply</string>
 </resources>
