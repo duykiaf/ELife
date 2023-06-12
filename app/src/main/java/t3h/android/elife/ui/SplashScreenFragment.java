@@ -1,16 +1,15 @@
 package t3h.android.elife.ui;
 
 import android.os.Bundle;
-
-import androidx.databinding.DataBindingUtil;
-import androidx.fragment.app.Fragment;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+
+import androidx.databinding.DataBindingUtil;
+import androidx.fragment.app.Fragment;
 
 import t3h.android.elife.R;
 import t3h.android.elife.databinding.FragmentSplashScreenBinding;
@@ -35,6 +34,11 @@ public class SplashScreenFragment extends Fragment {
         binding.startBtn.setAnimation(bottomAnim);
 
         return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
     }
 
     @Override
