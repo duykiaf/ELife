@@ -9,5 +9,27 @@
         android:id="@+id/splashScreenFragment"
         android:name="t3h.android.elife.ui.SplashScreenFragment"
         android:label="SplashScreenFragment"
-        tools:layout="@layout/fragment_splash_screen" />
+        tools:layout="@layout/fragment_splash_screen" >
+        <action
+            android:id="@+id/action_splashScreenFragment_to_topicsListFragment"
+            app:destination="@id/topicsListFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/topicsListFragment"
+        android:name="t3h.android.elife.ui.TopicsListFragment"
+        android:label="TopicsListFragment"
+        tools:layout="@layout/fragment_topics_list" />
+
+    <fragment
+        android:id="@+id/audiosListFragment"
+        android:name="t3h.android.elife.ui.AudiosListFragment"
+        android:label="AudiosListFragment"
+        tools:layout="@layout/fragment_audios_list" />
+
+    <fragment
+        android:id="@+id/audioDetailsFragment"
+        android:name="t3h.android.elife.ui.AudioDetailsFragment"
+        android:label="AudioDetailsFragment"
+        tools:layout="@layout/fragment_audio_details" />
 </navigation>
