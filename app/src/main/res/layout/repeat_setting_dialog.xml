@@ -1,6 +1,92 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             android:layout_width="match_parent"
-             android:layout_height="match_parent">
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/repeatSettingDialog"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:layout_marginHorizontal="@dimen/layout_margin_horizontal"
+    android:background="@drawable/button_background"
+    android:padding="@dimen/padding_20dp">
 
-</FrameLayout>
+    <TextView
+        android:id="@+id/dialogTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/ubuntu_bold"
+        android:includeFontPadding="false"
+        android:text="@string/repeat_setting"
+        android:textAlignment="center"
+        android:textColor="@color/black"
+        android:textSize="@dimen/title_txt_size"
+        tools:ignore="MissingConstraints" />
+
+    <EditText
+        android:id="@+id/repeatNumberEdt"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="@dimen/layout_margin_vertical"
+        android:background="@drawable/card_background"
+        android:fontFamily="@font/ubuntu_regular"
+        android:hint="@string/example_10"
+        android:includeFontPadding="false"
+        android:inputType="number"
+        android:padding="@dimen/padding_20dp"
+        android:textAlignment="center"
+        android:textColor="@color/black"
+        android:textColorHint="@color/primaryColor"
+        android:textSize="@dimen/content_txt_size"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/dialogTitle"
+        tools:ignore="MissingConstraints" />
+
+    <TextView
+        android:id="@+id/maxNumberNote"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/layout_margin_top_10dp"
+        android:fontFamily="@font/ubuntu_regular"
+        android:includeFontPadding="false"
+        android:text="@string/maximum_number_of_repetitions"
+        android:textAlignment="center"
+        android:textColor="@color/black"
+        android:textSize="@dimen/sub_content_txt_size"
+        app:layout_constraintStart_toStartOf="@id/repeatNumberEdt"
+        app:layout_constraintTop_toBottomOf="@id/repeatNumberEdt" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/saveBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/button_size"
+        android:layout_marginTop="@dimen/layout_margin_vertical"
+        android:background="@drawable/blue_btn_background"
+        android:fontFamily="@font/ubuntu_bold"
+        android:includeFontPadding="false"
+        android:text="@string/save"
+        android:textAllCaps="false"
+        android:textColor="@color/white"
+        android:textSize="@dimen/content_txt_size"
+        app:layout_constraintEnd_toStartOf="@id/cancelBtn"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/maxNumberNote"
+        tools:ignore="MissingConstraints" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/cancelBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/button_size"
+        android:background="@drawable/secondary_btn_background"
+        android:fontFamily="@font/ubuntu_bold"
+        android:includeFontPadding="false"
+        android:text="@string/cancel"
+        android:textAllCaps="false"
+        android:textColor="@color/black"
+        android:textSize="@dimen/content_txt_size"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/saveBtn"
+        app:layout_constraintTop_toTopOf="@id/saveBtn"
+        tools:ignore="MissingConstraints" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
