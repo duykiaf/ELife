@@ -7,8 +7,8 @@ import retrofit2.http.GET;
 import t3h.android.elife.models.Audio;
 import t3h.android.elife.models.Topic;
 
-public interface ApiHelper {
-    @GET("/topic/list")
+public interface MainApi {
+    @GET("/topic/get-active-topics")
     Call<List<Topic>> getActiveTopicsList();
 
     @GET("/audio/get-list-by-topic")
