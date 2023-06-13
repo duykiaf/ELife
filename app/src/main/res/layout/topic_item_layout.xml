@@ -1,17 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android">
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <data>
 
+        <variable
+            name="topic"
+            type="t3h.android.elife.models.Topic" />
     </data>
 
     <LinearLayout
+        android:id="@+id/topicItem"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/layout_margin_horizontal"
         android:layout_marginTop="@dimen/layout_margin_vertical"
-        android:background="@drawable/button_background"
-        android:elevation="@dimen/elevation"
+        android:background="@drawable/card_background"
         android:gravity="center"
         android:orientation="vertical"
         android:padding="@dimen/padding_10dp">
@@ -20,7 +24,7 @@
             android:id="@+id/topicImage"
             android:layout_width="@dimen/topic_img_size"
             android:layout_height="@dimen/topic_img_size"
-            android:src="@drawable/elife_logo" />
+            app:url="@{topic.image}"/>
 
         <TextView
             android:id="@+id/topicName"
@@ -30,7 +34,7 @@
             android:fontFamily="@font/ubuntu_bold"
             android:includeFontPadding="false"
             android:maxLines="3"
-            android:text="@string/topic_name"
+            android:text="@{topic.name}"
             android:textAlignment="center"
             android:textColor="@color/black"
             android:textSize="@dimen/content_txt_size" />
