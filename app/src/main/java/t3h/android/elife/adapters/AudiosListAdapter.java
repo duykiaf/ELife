@@ -1,5 +1,7 @@
 package t3h.android.elife.adapters;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -9,18 +11,21 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import t3h.android.elife.R;
 import t3h.android.elife.databinding.AudioItemLayoutBinding;
 import t3h.android.elife.helper.AppConstant;
 import t3h.android.elife.helper.AudioHelper;
 import t3h.android.elife.models.Audio;
-import t3h.android.elife.repositories.MainRepository;
 
 public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.AudioItemViewHolder> {
+    private List<Audio> dataSource;
     private List<Audio> audioList;
     private List<Integer> bookmarkAudioIds;
     private OnAudioClickListener onAudioClickListener;
+    private Timer timer;
     private int currentIndex = -1;
 
     public AudiosListAdapter() {
@@ -30,6 +35,7 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
 
     public void setAudioList(List<Audio> audioList) {
         this.audioList = audioList;
+        dataSource = audioList;
         notifyDataSetChanged();
     }
 
@@ -101,7 +107,7 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
                 }
             });
             if (bookmarkAudioIds != null) {
-                for (Integer id: bookmarkAudioIds) {
+                for (Integer id : bookmarkAudioIds) {
                     if (audio.getId() == id) {
                         binding.bookmarkIcon.setContentDescription(AppConstant.BOOKMARK_ICON);
                         binding.bookmarkIcon.setImageResource(R.drawable.ic_bookmark);
@@ -116,5 +122,32 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
         void onItemClick(Audio audio);
 
         void onIconClick(AudioItemLayoutBinding binding, ImageView imageView, Audio audio);
+    }
+
+    public void searchList(String keyword) {
+        timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (keyword.isEmpty()) {
+                    audioList = dataSource;
+                } else {
+                    List<Audio> temp = new ArrayList<>();
+                    for (Audio item : dataSource) {
+                        if (item.getTitle().toLowerCase().contains(keyword)) {
+                            temp.add(item);
+                        }
+                    }
+                    audioList = temp;
+                }
+                new Handler(Looper.getMainLooper()).post(() -> notifyDataSetChanged());
+            }
+        }, 500);
+    }
+
+    public void cancelTimer() {
+        if (timer != null) {
+            timer.cancel();
+        }
     }
 }

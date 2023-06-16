@@ -3,6 +3,7 @@ package t3h.android.elife.ui;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.InputFilter;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -113,13 +114,14 @@ public class AudiosListFragment extends Fragment {
                         setSearchLayoutState(true);
                         binding.searchEdt.requestFocus();
                         setBtnState(false);
-                        //loadSearchList(adapter);
+                        loadSearchList(adapter);
                     }
                     return true;
                 case R.id.bookmarksItem:
                     if (!isBookmarksList) {
                         initTopAppBarUI(true);
                         loadBookmarksList();
+                        isBookmarksList = true;
                     }
                     return true;
             }
@@ -225,30 +227,39 @@ public class AudiosListFragment extends Fragment {
         audioItemLayoutBinding.durationTxt.setTextColor(colorResource);
     }
 
-    private void resetSearchFeature() {
-        setSearchLayoutState(false);
-        binding.searchEdt.setText("");
-        initAudiosList();
-    }
-
-    private void loadSearchList() {
+    private void loadSearchList(AudiosListAdapter adapter) {
         binding.searchEdt.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
+                InputFilter[] filters = new InputFilter[1];
+                filters[0] = new InputFilter.LengthFilter(AppConstant.KEYWORD_MAX_LENGTH);
+                binding.searchEdt.setFilters(filters);
             }
 
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
+                adapter.cancelTimer();
+                if (charSequence.toString().length() == AppConstant.KEYWORD_MAX_LENGTH) {
+                    binding.searchEdt.setError(AppConstant.SEARCH_ERROR);
+                }
             }
 
             @Override
             public void afterTextChanged(Editable editable) {
-
+                adapter.searchList(editable.toString().trim().toLowerCase());
             }
         });
         binding.closeSearchLayout.setOnClickListener(v -> resetSearchFeature());
+    }
+
+    private void resetSearchFeature() {
+        setSearchLayoutState(false);
+        binding.searchEdt.setText("");
+        if (isBookmarksList) {
+            loadBookmarksList();
+        } else {
+            initAudiosList();
+        }
     }
 
     private void setBtnState(boolean isVisible) {
