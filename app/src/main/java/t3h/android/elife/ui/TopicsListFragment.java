@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import t3h.android.elife.R;
 import t3h.android.elife.adapters.TopicsListAdapter;
 import t3h.android.elife.databinding.FragmentTopicsListBinding;
+import t3h.android.elife.helper.AppConstant;
 import t3h.android.elife.repositories.MainRepository;
 
 public class TopicsListFragment extends Fragment {
@@ -90,15 +91,15 @@ public class TopicsListFragment extends Fragment {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                 InputFilter[] filters = new InputFilter[1];
-                filters[0] = new InputFilter.LengthFilter(50);
+                filters[0] = new InputFilter.LengthFilter(AppConstant.KEYWORD_MAX_LENGTH);
                 binding.searchEdt.setFilters(filters);
             }
 
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                 adapter.cancelTimer();
-                if (charSequence.toString().length() == 50) {
-                    binding.searchEdt.setError("Keyword must not exceed 50 characters");
+                if (charSequence.toString().length() == AppConstant.KEYWORD_MAX_LENGTH) {
+                    binding.searchEdt.setError(AppConstant.SEARCH_ERROR);
                 }
             }
 
