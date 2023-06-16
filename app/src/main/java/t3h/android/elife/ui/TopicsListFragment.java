@@ -7,12 +7,13 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import t3h.android.elife.R;
@@ -23,11 +24,14 @@ import t3h.android.elife.repositories.MainRepository;
 public class TopicsListFragment extends Fragment {
     private FragmentTopicsListBinding binding;
     private final TopicsListAdapter adapter = new TopicsListAdapter();
+    private final Bundle bundle = new Bundle();
+    private NavController navController;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_topics_list, container, false);
+        navController = Navigation.findNavController(requireActivity(), R.id.navHostFragment);
         return binding.getRoot();
     }
 
@@ -49,7 +53,8 @@ public class TopicsListFragment extends Fragment {
     private void initTopicsList() {
         MainRepository mainRepository = new MainRepository();
         mainRepository.getActiveTopicsList().observe(requireActivity(), topics -> {
-            if (topics != null) {
+            if (topics != null && topics.size() > 0) {
+                binding.noDataTxt.setVisibility(View.GONE);
                 adapter.setTopicList(topics);
             } else {
                 binding.noDataTxt.setVisibility(View.VISIBLE);
@@ -66,14 +71,14 @@ public class TopicsListFragment extends Fragment {
                     if (binding.searchEdt.getVisibility() == View.VISIBLE) {
                         resetSearchFeature();
                     } else {
-                        binding.searchEdt.setVisibility(View.VISIBLE);
-                        binding.closeSearchLayout.setVisibility(View.VISIBLE);
+                        setSearchLayoutState(true);
                         binding.searchEdt.requestFocus();
                         loadSearchList(adapter);
                     }
                     return true;
                 case R.id.bookmarksItem:
-                    Toast.makeText(requireActivity(), "Bookmarks list", Toast.LENGTH_SHORT).show();
+                    bundle.putBoolean("isBookmarksList", true);
+                    navController.navigate(R.id.action_topicsListFragment_to_audiosListFragment, bundle);
                     return true;
             }
             return false;
@@ -106,15 +111,25 @@ public class TopicsListFragment extends Fragment {
     }
 
     private void resetSearchFeature() {
-        binding.searchEdt.setVisibility(View.GONE);
-        binding.closeSearchLayout.setVisibility(View.GONE);
+        setSearchLayoutState(false);
         binding.searchEdt.setText("");
         initTopicsList();
     }
 
+    private void setSearchLayoutState(boolean isVisible) {
+        binding.searchEdt.setVisibility(getState(isVisible));
+        binding.closeSearchLayout.setVisibility(getState(isVisible));
+    }
+
+    private int getState(boolean isVisible) {
+        return isVisible ? View.VISIBLE : View.GONE;
+    }
+
     private void onTopicItemSelected() {
-        adapter.setOnItemListClickListener(object -> {
-            Toast.makeText(requireActivity(), object.getName(), Toast.LENGTH_SHORT).show();
+        bundle.putBoolean("isBookmarksList", false);
+        adapter.setOnTopicClickListener(topic -> {
+            bundle.putSerializable("topicInfo", topic);
+            navController.navigate(R.id.action_topicsListFragment_to_audiosListFragment, bundle);
         });
     }
 
