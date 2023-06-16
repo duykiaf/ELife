@@ -5,13 +5,17 @@
 
     <data>
 
+        <variable
+            name="audio"
+            type="t3h.android.elife.models.Audio" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/audioItemLayout"
         android:layout_width="match_parent"
         android:layout_height="@dimen/item_height"
         android:layout_marginHorizontal="@dimen/layout_margin_horizontal"
-        android:layout_marginTop="@dimen/layout_margin_vertical"
+        android:layout_marginTop="@dimen/padding_20dp"
         android:background="@drawable/card_background"
         android:paddingHorizontal="@dimen/layout_margin_horizontal">
 
@@ -19,7 +23,7 @@
             android:id="@+id/playIcon"
             android:layout_width="@dimen/large_icon_size"
             android:layout_height="@dimen/large_icon_size"
-            android:contentDescription="@string/app_name"
+            android:contentDescription="@string/play_icon"
             android:src="@drawable/ic_play_circle_outline"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -43,7 +47,7 @@
                 android:fontFamily="@font/ubuntu_bold"
                 android:includeFontPadding="false"
                 android:maxLines="1"
-                android:text="@string/this_is_audio_title"
+                android:text="@{audio.title}"
                 android:textColor="@color/black"
                 android:textSize="@dimen/content_txt_size" />
 
@@ -63,7 +67,7 @@
             android:id="@+id/bookmarkIcon"
             android:layout_width="@dimen/small_icon_size"
             android:layout_height="@dimen/small_icon_size"
-            android:contentDescription="@string/app_name"
+            android:contentDescription="@string/bookmark_border_icon"
             android:src="@drawable/ic_bookmark_border"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
