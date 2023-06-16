@@ -14,14 +14,13 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import t3h.android.elife.databinding.TopicItemLayoutBinding;
-import t3h.android.elife.listener.OnItemListClickListener;
 import t3h.android.elife.models.Topic;
 
 public class TopicsListAdapter extends RecyclerView.Adapter<TopicsListAdapter.TopicItemViewHolder> {
     private List<Topic> topicList;
     private List<Topic> dataSource;
     private Timer timer;
-    private OnItemListClickListener<Topic> onItemListClickListener;
+    private OnTopicClickListener onTopicClickListener;
 
     public TopicsListAdapter() {
         topicList = new ArrayList<>();
@@ -33,8 +32,8 @@ public class TopicsListAdapter extends RecyclerView.Adapter<TopicsListAdapter.To
         notifyDataSetChanged();
     }
 
-    public void setOnItemListClickListener(OnItemListClickListener<Topic> listener) {
-        onItemListClickListener = listener;
+    public void setOnTopicClickListener(OnTopicClickListener listener) {
+        onTopicClickListener = listener;
     }
 
     @NonNull
@@ -64,8 +63,8 @@ public class TopicsListAdapter extends RecyclerView.Adapter<TopicsListAdapter.To
             this.binding = binding;
 
             binding.topicItem.setOnClickListener(v -> {
-                if (onItemListClickListener != null) {
-                    onItemListClickListener.onItemClick(topicList.get(getAdapterPosition()));
+                if (onTopicClickListener != null) {
+                    onTopicClickListener.onItemClick(topicList.get(getAdapterPosition()));
                 }
             });
         }
@@ -100,5 +99,9 @@ public class TopicsListAdapter extends RecyclerView.Adapter<TopicsListAdapter.To
         if (timer != null) {
             timer.cancel();
         }
+    }
+
+    public interface OnTopicClickListener{
+        void onItemClick(Topic topic);
     }
 }
