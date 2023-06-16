@@ -12,4 +12,6 @@ public class AppConstant {
     public static final String ADD_BOOKMARK_FAILED = "Add bookmark failed!";
     public static final String REMOVE_BOOKMARK_SUCCESSFULLY = "Remove bookmark successfully!";
     public static final String REMOVE_BOOKMARK_FAILED = "Remove bookmark failed!";
+    public static final String SEARCH_ERROR = "Keyword must not exceed 50 characters";
+    public static final int KEYWORD_MAX_LENGTH = 50;
 }
