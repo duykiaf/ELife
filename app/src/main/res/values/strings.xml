@@ -30,4 +30,6 @@
     <string name="select_language">Select language:</string>
     <string name="apply">Apply</string>
     <string name="no_data">No Data</string>
+    <string name="play_icon">PlayIcon</string>
+    <string name="bookmark_border_icon">BookmarkBorderIcon</string>
 </resources>
