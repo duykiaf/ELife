@@ -19,13 +19,21 @@
         android:id="@+id/topicsListFragment"
         android:name="t3h.android.elife.ui.TopicsListFragment"
         android:label="TopicsListFragment"
-        tools:layout="@layout/fragment_topics_list" />
+        tools:layout="@layout/fragment_topics_list" >
+        <action
+            android:id="@+id/action_topicsListFragment_to_audiosListFragment"
+            app:destination="@id/audiosListFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/audiosListFragment"
         android:name="t3h.android.elife.ui.AudiosListFragment"
         android:label="AudiosListFragment"
-        tools:layout="@layout/fragment_audios_list" />
+        tools:layout="@layout/fragment_audios_list" >
+        <action
+            android:id="@+id/action_audiosListFragment_to_audioDetailsFragment"
+            app:destination="@id/audioDetailsFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/audioDetailsFragment"
