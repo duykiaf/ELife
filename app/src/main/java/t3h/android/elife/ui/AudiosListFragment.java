@@ -37,6 +37,7 @@ public class AudiosListFragment extends Fragment {
     private boolean isBookmarksList = false;
     private Topic topicInfo;
     private final AudiosListAdapter adapter = new AudiosListAdapter();
+    private final AudioHelper audioHelper = new AudioHelper();
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -74,6 +75,7 @@ public class AudiosListFragment extends Fragment {
         onBackPressed();
         onMenuItemSelected();
         onItemSelected();
+        binding.goToTopImageView.setOnClickListener(v -> binding.audiosRcv.smoothScrollToPosition(0));
     }
 
     private void initAudiosList() {
@@ -187,35 +189,18 @@ public class AudiosListFragment extends Fragment {
                         } else {
                             iconColor = getResources().getColor(R.color.primaryColor);
                         }
-                        AudioHelper audioHelper = new AudioHelper();
                         binding.bookmarkIcon.setColorFilter(iconColor, PorterDuff.Mode.MULTIPLY);
                         if (imageView.getContentDescription().equals(AppConstant.BOOKMARK_BORDER_ICON)) {
-                            imageView.setContentDescription(AppConstant.BOOKMARK_ICON);
-                            imageView.setImageResource(R.drawable.ic_bookmark);
-                            // add bookmark here
-                            audioHelper.addBookmark(requireActivity(), audio, audioId -> {
-                                if (audioId > 0) {
-                                    Toast.makeText(requireActivity(), AppConstant.ADD_BOOKMARK_SUCCESSFULLY, Toast.LENGTH_SHORT).show();
-                                } else {
-                                    Toast.makeText(requireActivity(), AppConstant.ADD_BOOKMARK_FAILED, Toast.LENGTH_SHORT).show();
-                                }
-                            });
+                            imgContentDesc = AppConstant.BOOKMARK_ICON;
+                            imageResource = R.drawable.ic_bookmark;
+                            addBookmark(audioHelper, audio);
                         } else if (imageView.getContentDescription().equals(AppConstant.BOOKMARK_ICON)) {
-                            imageView.setContentDescription(AppConstant.BOOKMARK_BORDER_ICON);
-                            imageView.setImageResource(R.drawable.ic_bookmark_border);
-                            // remove bookmark here
-                            audioHelper.removeBookmark(requireActivity(), audio, deletedRow -> {
-                                if (deletedRow > 0) {
-                                    Toast.makeText(requireActivity(), AppConstant.REMOVE_BOOKMARK_SUCCESSFULLY, Toast.LENGTH_SHORT).show();
-                                } else {
-                                    Toast.makeText(requireActivity(), AppConstant.REMOVE_BOOKMARK_FAILED, Toast.LENGTH_SHORT).show();
-                                }
-                                if (isBookmarksList) {
-                                    initTopAppBarUI(true);
-                                    loadBookmarksList();
-                                }
-                            });
+                            imgContentDesc = AppConstant.BOOKMARK_BORDER_ICON;
+                            imageResource = R.drawable.ic_bookmark_border;
+                            removeBookmark(audioHelper, audio);
                         }
+                        imageView.setContentDescription(imgContentDesc);
+                        imageView.setImageResource(imageResource);
                         break;
                 }
             }
@@ -274,6 +259,30 @@ public class AudiosListFragment extends Fragment {
 
     private int getState(boolean isVisible) {
         return isVisible ? View.VISIBLE : View.GONE;
+    }
+
+    private void addBookmark(AudioHelper audioHelper, Audio audio) {
+        audioHelper.addBookmark(requireActivity(), audio, audioId -> {
+            if (audioId > 0) {
+                Toast.makeText(requireActivity(), AppConstant.ADD_BOOKMARK_SUCCESSFULLY, Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(requireActivity(), AppConstant.ADD_BOOKMARK_FAILED, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void removeBookmark(AudioHelper audioHelper, Audio audio) {
+        audioHelper.removeBookmark(requireActivity(), audio, deletedRow -> {
+            if (deletedRow > 0) {
+                Toast.makeText(requireActivity(), AppConstant.REMOVE_BOOKMARK_SUCCESSFULLY, Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(requireActivity(), AppConstant.REMOVE_BOOKMARK_FAILED, Toast.LENGTH_SHORT).show();
+            }
+            if (isBookmarksList) {
+                initTopAppBarUI(true);
+                loadBookmarksList();
+            }
+        });
     }
 
     @Override
