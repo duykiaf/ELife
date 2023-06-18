@@ -62,6 +62,7 @@ public class TopicsListFragment extends Fragment {
             }
         });
         binding.topicsRcv.setAdapter(adapter);
+        binding.topicsRcv.setHasFixedSize(true);
         binding.topicsRcv.setLayoutManager(new LinearLayoutManager(requireActivity()));
     }
 
