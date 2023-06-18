@@ -41,6 +41,7 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
 
     public void setBookmarkAudioIds(List<Integer> audioIds) {
         bookmarkAudioIds = audioIds;
+        notifyDataSetChanged();
     }
 
     public void setOnAudioClickListener(OnAudioClickListener listener) {
@@ -68,7 +69,7 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
     }
 
     public class AudioItemViewHolder extends RecyclerView.ViewHolder {
-        private AudioItemLayoutBinding binding;
+        private final AudioItemLayoutBinding binding;
 
         public AudioItemViewHolder(@NonNull AudioItemLayoutBinding binding) {
             super(binding.getRoot());
@@ -94,6 +95,10 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
         }
 
         public void bindView(Audio audio) {
+            binding.durationTxt.setText(AppConstant.DURATION_DEFAULT);
+            binding.bookmarkIcon.setContentDescription(AppConstant.BOOKMARK_BORDER_ICON);
+            binding.bookmarkIcon.setImageResource(R.drawable.ic_bookmark_border);
+
             binding.setAudio(audio);
             AudioHelper.getAudioDuration(audio.getAudioFile(), new AudioHelper.DurationCallback() {
                 @Override
