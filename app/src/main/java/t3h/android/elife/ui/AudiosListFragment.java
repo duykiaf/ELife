@@ -79,8 +79,7 @@ public class AudiosListFragment extends Fragment {
     }
 
     private void initAudiosList() {
-        MainRepository mainRepo = new MainRepository(requireActivity().getApplication());
-        mainRepo.getAudioIds().observe(requireActivity(), adapter::setBookmarkAudioIds);
+        getBookmarkAudioIds();
 
         MainRepository mainRepository = new MainRepository();
         mainRepository.getActiveAudiosListByTopicId(topicInfo.getId()).observe(requireActivity(), audioList -> {
@@ -94,6 +93,7 @@ public class AudiosListFragment extends Fragment {
             }
         });
         binding.audiosRcv.setAdapter(adapter);
+        binding.audiosRcv.setHasFixedSize(true);
         binding.audiosRcv.setLayoutManager(new LinearLayoutManager(requireActivity()));
     }
 
@@ -122,8 +122,8 @@ public class AudiosListFragment extends Fragment {
                 case R.id.bookmarksItem:
                     if (!isBookmarksList) {
                         initTopAppBarUI(true);
-                        loadBookmarksList();
                         isBookmarksList = true;
+                        resetSearchFeature();
                     }
                     return true;
             }
@@ -132,6 +132,8 @@ public class AudiosListFragment extends Fragment {
     }
 
     private void loadBookmarksList() {
+        getBookmarkAudioIds();
+
         MainRepository mainRepository = new MainRepository(requireActivity().getApplication());
         mainRepository.getBookmarksList().observe(requireActivity(), audioList -> {
             if (audioList != null && audioList.size() > 0) {
@@ -148,7 +150,13 @@ public class AudiosListFragment extends Fragment {
             }
         });
         binding.audiosRcv.setAdapter(adapter);
+        binding.audiosRcv.setHasFixedSize(true);
         binding.audiosRcv.setLayoutManager(new LinearLayoutManager(requireActivity()));
+    }
+
+    private void getBookmarkAudioIds() {
+        MainRepository mainRepo = new MainRepository(requireActivity().getApplication());
+        mainRepo.getAudioIds().observe(requireActivity(), adapter::setBookmarkAudioIds);
     }
 
     private void onItemSelected() {
