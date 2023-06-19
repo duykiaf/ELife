@@ -57,20 +57,20 @@ public class AudioHelper {
         return timerStr.toString();
     }
 
-    public void addBookmark(Activity activity, Audio audio, OnFinishListener onFinishListener) {
-        new AddBookmarkTask(activity, audio, onFinishListener).forceLoad();
+    public void addBookmark(Activity activity, Audio audio, OnAddListener onAddListener) {
+        new AddBookmarkTask(activity, audio, onAddListener).forceLoad();
     }
 
     private class AddBookmarkTask extends AsyncTaskLoader<Long> {
         private final Activity activity;
         private final Audio data;
-        private final OnFinishListener onFinishListener;
+        private final OnAddListener onAddListener;
 
-        public AddBookmarkTask(@NonNull Activity activity, Audio data, OnFinishListener onFinishListener) {
+        public AddBookmarkTask(@NonNull Activity activity, Audio data, OnAddListener onAddListener) {
             super(activity);
             this.activity = activity;
             this.data = data;
-            this.onFinishListener = onFinishListener;
+            this.onAddListener = onAddListener;
         }
 
         @Nullable
@@ -82,8 +82,8 @@ public class AudioHelper {
         @Override
         public void deliverResult(@Nullable Long data) {
             super.deliverResult(data);
-            if (onFinishListener != null) {
-                onFinishListener.onFinish(data);
+            if (onAddListener != null) {
+                onAddListener.onFinish(data);
             }
         }
 
@@ -93,7 +93,7 @@ public class AudioHelper {
         }
     }
 
-    public interface OnFinishListener{
+    public interface OnAddListener{
         void onFinish(long audioId);
     }
 
