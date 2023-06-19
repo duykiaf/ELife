@@ -35,8 +35,10 @@ public class AudiosListFragment extends Fragment {
     private int imageResource = 0;
     private int audioBgResource = 0;
     private boolean isBookmarksList = false;
+    private boolean isSearching = false;
     private Topic topicInfo;
-    private final AudiosListAdapter adapter = new AudiosListAdapter();
+    private AudiosListAdapter adapter = new AudiosListAdapter();
+    private final MainRepository mainRepository = new MainRepository();
     private final AudioHelper audioHelper = new AudioHelper();
 
     @Override
@@ -74,14 +76,13 @@ public class AudiosListFragment extends Fragment {
         super.onResume();
         onBackPressed();
         onMenuItemSelected();
-        onItemSelected();
+        onItemSelected(adapter);
         binding.goToTopImageView.setOnClickListener(v -> binding.audiosRcv.smoothScrollToPosition(0));
     }
 
     private void initAudiosList() {
-        getBookmarkAudioIds();
-
-        MainRepository mainRepository = new MainRepository();
+        MainRepository mainRepoForDao = new MainRepository(requireActivity().getApplication());
+        mainRepoForDao.getAudioIds().observe(requireActivity(), adapter::setBookmarkAudioIds);
         mainRepository.getActiveAudiosListByTopicId(topicInfo.getId()).observe(requireActivity(), audioList -> {
             if (audioList != null && audioList.size() > 0) {
                 binding.noDataTxt.setVisibility(View.GONE);
@@ -92,9 +93,7 @@ public class AudiosListFragment extends Fragment {
                 setBtnState(false);
             }
         });
-        binding.audiosRcv.setAdapter(adapter);
-        binding.audiosRcv.setHasFixedSize(true);
-        binding.audiosRcv.setLayoutManager(new LinearLayoutManager(requireActivity()));
+        initRcv(adapter);
     }
 
     private void onBackPressed() {
@@ -113,10 +112,13 @@ public class AudiosListFragment extends Fragment {
                         setBtnState(true);
                         resetSearchFeature();
                     } else {
+                        isSearching = true;
                         setSearchLayoutState(true);
                         binding.searchEdt.requestFocus();
                         setBtnState(false);
-                        loadSearchList(adapter);
+                        if (!isBookmarksList) {
+                            loadSearchList(adapter);
+                        }
                     }
                     return true;
                 case R.id.bookmarksItem:
@@ -132,14 +134,19 @@ public class AudiosListFragment extends Fragment {
     }
 
     private void loadBookmarksList() {
-        getBookmarkAudioIds();
-
-        MainRepository mainRepository = new MainRepository(requireActivity().getApplication());
-        mainRepository.getBookmarksList().observe(requireActivity(), audioList -> {
+        AudiosListAdapter adapter = new AudiosListAdapter();
+        MainRepository mainRepoForDao = new MainRepository(requireActivity().getApplication());
+        mainRepoForDao.getAudioIds().observe(requireActivity(), adapter::setBookmarkAudioIds);
+        mainRepoForDao.getBookmarksList().observe(requireActivity(), audioList -> {
             if (audioList != null && audioList.size() > 0) {
                 if (binding != null) {
                     binding.noDataTxt.setVisibility(View.GONE);
-                    setBtnState(true);
+                    if (isSearching) {
+                        binding.searchEdt.setText("");
+                        setBtnState(false);
+                    } else {
+                        setBtnState(true);
+                    }
                 }
                 adapter.setAudioList(audioList);
             } else {
@@ -149,17 +156,18 @@ public class AudiosListFragment extends Fragment {
                 }
             }
         });
+        initRcv(adapter);
+        loadSearchList(adapter);
+        onItemSelected(adapter);
+    }
+
+    private void initRcv(AudiosListAdapter adapter) {
         binding.audiosRcv.setAdapter(adapter);
         binding.audiosRcv.setHasFixedSize(true);
         binding.audiosRcv.setLayoutManager(new LinearLayoutManager(requireActivity()));
     }
 
-    private void getBookmarkAudioIds() {
-        MainRepository mainRepo = new MainRepository(requireActivity().getApplication());
-        mainRepo.getAudioIds().observe(requireActivity(), adapter::setBookmarkAudioIds);
-    }
-
-    private void onItemSelected() {
+    private void onItemSelected(AudiosListAdapter adapter) {
         adapter.setOnAudioClickListener(new AudiosListAdapter.OnAudioClickListener() {
             @Override
             public void onItemClick(Audio audio) {
@@ -177,7 +185,8 @@ public class AudiosListFragment extends Fragment {
                             imageResource = R.drawable.ic_pause_circle_outline;
                             audioBgResource = R.drawable.blue_btn_background;
                             setAudioTextColor(binding, iconColor);
-                        } else if (imageView.getContentDescription().equals(AppConstant.PAUSE_ICON)) {
+                        }
+                        if (imageView.getContentDescription().equals(AppConstant.PAUSE_ICON)) {
                             isPlaying = false;
                             imgContentDesc = AppConstant.PLAY_ICON;
                             iconColor = getResources().getColor(R.color.primaryColor);
@@ -201,11 +210,12 @@ public class AudiosListFragment extends Fragment {
                         if (imageView.getContentDescription().equals(AppConstant.BOOKMARK_BORDER_ICON)) {
                             imgContentDesc = AppConstant.BOOKMARK_ICON;
                             imageResource = R.drawable.ic_bookmark;
-                            addBookmark(audioHelper, audio);
-                        } else if (imageView.getContentDescription().equals(AppConstant.BOOKMARK_ICON)) {
+                            addBookmark(audio);
+                        }
+                        if (imageView.getContentDescription().equals(AppConstant.BOOKMARK_ICON)) {
                             imgContentDesc = AppConstant.BOOKMARK_BORDER_ICON;
                             imageResource = R.drawable.ic_bookmark_border;
-                            removeBookmark(audioHelper, audio);
+                            removeBookmark(audio);
                         }
                         imageView.setContentDescription(imgContentDesc);
                         imageView.setImageResource(imageResource);
@@ -246,6 +256,7 @@ public class AudiosListFragment extends Fragment {
     }
 
     private void resetSearchFeature() {
+        isSearching = false;
         setSearchLayoutState(false);
         binding.searchEdt.setText("");
         if (isBookmarksList) {
@@ -269,7 +280,7 @@ public class AudiosListFragment extends Fragment {
         return isVisible ? View.VISIBLE : View.GONE;
     }
 
-    private void addBookmark(AudioHelper audioHelper, Audio audio) {
+    private void addBookmark(Audio audio) {
         audioHelper.addBookmark(requireActivity(), audio, audioId -> {
             if (audioId > 0) {
                 Toast.makeText(requireActivity(), AppConstant.ADD_BOOKMARK_SUCCESSFULLY, Toast.LENGTH_SHORT).show();
@@ -279,7 +290,7 @@ public class AudiosListFragment extends Fragment {
         });
     }
 
-    private void removeBookmark(AudioHelper audioHelper, Audio audio) {
+    private void removeBookmark(Audio audio) {
         audioHelper.removeBookmark(requireActivity(), audio, deletedRow -> {
             if (deletedRow > 0) {
                 Toast.makeText(requireActivity(), AppConstant.REMOVE_BOOKMARK_SUCCESSFULLY, Toast.LENGTH_SHORT).show();
