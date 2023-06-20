@@ -35,7 +35,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="@dimen/layout_margin_horizontal"
-            android:layout_marginTop="@dimen/layout_margin_vertical"
+            android:layout_marginVertical="@dimen/layout_margin_vertical"
             android:background="@drawable/card_background"
             android:fontFamily="@font/ubuntu_regular"
             android:hint="@string/search"
@@ -47,6 +47,8 @@
             android:textColorHint="@color/primaryColor"
             android:textSize="@dimen/content_txt_size"
             android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/appBarFragment" />
 
         <ImageView
@@ -65,6 +67,7 @@
             android:id="@+id/topicsRcv"
             android:layout_width="match_parent"
             android:layout_height="0dp"
+            android:layout_marginTop="14dp"
             android:clipToPadding="false"
             android:paddingStart="0dp"
             android:paddingEnd="@dimen/layout_margin_horizontal"
