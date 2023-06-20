@@ -65,7 +65,10 @@
             android:id="@+id/topicsRcv"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:paddingVertical="@dimen/padding_10dp"
+            android:clipToPadding="false"
+            android:paddingStart="0dp"
+            android:paddingEnd="@dimen/layout_margin_horizontal"
+            android:paddingBottom="@dimen/layout_margin_horizontal"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toBottomOf="@id/searchEdt"
             tools:listitem="@layout/topic_item_layout" />

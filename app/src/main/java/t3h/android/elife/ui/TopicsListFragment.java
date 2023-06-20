@@ -14,6 +14,7 @@ import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import t3h.android.elife.R;
@@ -63,7 +64,9 @@ public class TopicsListFragment extends Fragment {
         });
         binding.topicsRcv.setAdapter(adapter);
         binding.topicsRcv.setHasFixedSize(true);
-        binding.topicsRcv.setLayoutManager(new LinearLayoutManager(requireActivity()));
+        binding.topicsRcv.setLayoutManager(
+                new GridLayoutManager(requireActivity(), 2, LinearLayoutManager.VERTICAL, false)
+        );
     }
 
     private void onMenuItemSelected() {

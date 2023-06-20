@@ -9,26 +9,28 @@
             type="t3h.android.elife.models.Topic" />
     </data>
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/topicItem"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="@dimen/layout_margin_horizontal"
+        android:layout_marginStart="@dimen/layout_margin_horizontal"
         android:layout_marginTop="@dimen/layout_margin_vertical"
         android:background="@drawable/card_background"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:padding="@dimen/padding_10dp">
+        android:paddingHorizontal="@dimen/padding_10dp"
+        android:paddingVertical="@dimen/padding_20dp">
 
         <ImageView
             android:id="@+id/topicImage"
             android:layout_width="@dimen/topic_img_size"
             android:layout_height="@dimen/topic_img_size"
-            app:url="@{topic.image}"/>
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:url="@{topic.image}" />
 
         <TextView
             android:id="@+id/topicName"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/layout_margin_top_10dp"
             android:fontFamily="@font/ubuntu_bold"
@@ -37,7 +39,10 @@
             android:text="@{topic.name}"
             android:textAlignment="center"
             android:textColor="@color/black"
-            android:textSize="@dimen/content_txt_size" />
+            android:textSize="@dimen/content_txt_size"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/topicImage" />
 
-    </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
