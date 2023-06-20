@@ -109,7 +109,7 @@
             android:layout_width="@dimen/button_size"
             android:layout_height="@dimen/button_size"
             android:layout_marginEnd="11dp"
-            android:layout_marginBottom="11dp"
+            android:layout_marginBottom="@dimen/layout_margin_vertical"
             android:background="@drawable/blue_btn_background"
             android:padding="@dimen/padding_10dp"
             android:src="@drawable/ic_arrow_upward"

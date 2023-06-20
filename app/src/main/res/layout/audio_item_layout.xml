@@ -32,11 +32,12 @@
 
         <LinearLayout
             android:id="@+id/audioInfoLayout"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/layout_margin_horizontal"
             android:orientation="vertical"
             app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/bookmarkIcon"
             app:layout_constraintStart_toEndOf="@id/playIcon"
             app:layout_constraintTop_toTopOf="parent">
 
@@ -46,7 +47,7 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/ubuntu_bold"
                 android:includeFontPadding="false"
-                android:maxLines="1"
+                android:maxLines="2"
                 android:text="@{audio.title}"
                 android:textColor="@color/black"
                 android:textSize="@dimen/content_txt_size" />
