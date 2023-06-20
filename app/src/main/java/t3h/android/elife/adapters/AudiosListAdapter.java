@@ -40,8 +40,20 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
     }
 
     public void setBookmarkAudioIds(List<Integer> audioIds) {
+        List<Integer> previousBookmarkAudioIds = new ArrayList<>(bookmarkAudioIds);
         bookmarkAudioIds = audioIds;
-        notifyDataSetChanged();
+
+        // Find the changed position
+        int changedPosition = 0;
+        for (int i = 0; i < audioList.size(); i++) {
+            Audio audio = audioList.get(i);
+            if (previousBookmarkAudioIds.contains(audio.getId()) != bookmarkAudioIds.contains(audio.getId())) {
+                changedPosition = i;
+                break;
+            }
+        }
+        // Notify item changes for the updated position
+        notifyItemChanged(changedPosition);
     }
 
     public void setOnAudioClickListener(OnAudioClickListener listener) {
