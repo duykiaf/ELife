@@ -1,7 +1,6 @@
 package t3h.android.elife.helper;
 
 import android.app.Activity;
-import android.content.Context;
 import android.media.MediaPlayer;
 
 import androidx.annotation.NonNull;
@@ -93,7 +92,7 @@ public class AudioHelper {
         }
     }
 
-    public interface OnAddListener{
+    public interface OnAddListener {
         void onFinish(long audioId);
     }
 
@@ -133,7 +132,7 @@ public class AudioHelper {
         }
     }
 
-    public interface OnRemoveListener{
+    public interface OnRemoveListener {
         void onFinish(int deletedRow);
     }
 }
