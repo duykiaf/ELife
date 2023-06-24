@@ -14,4 +14,11 @@ public class AppConstant {
     public static final String REMOVE_BOOKMARK_FAILED = "Remove bookmark failed!";
     public static final String SEARCH_ERROR = "Keyword must not exceed 50 characters";
     public static final int KEYWORD_MAX_LENGTH = 50;
+    public static final int NONE = 0;
+    public static final int PLAY = 1;
+    public static final int STOP = 2;
+
+    public static final String CHANNEL_ID = "t3h.android.elife.ELIFE_CHANNEL";
+    public static final String CHANNEL_NAME = "Elife";
+    public static final int NOTIFICATION_ID = 1;
 }
