@@ -1,5 +1,6 @@
 package t3h.android.elife.adapters;
 
+import android.graphics.Color;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.LayoutInflater;
@@ -27,6 +28,12 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
     private OnAudioClickListener onAudioClickListener;
     private Timer timer;
     private int currentIndex = -1;
+    public int status;
+    private String imgContentDesc = "";
+    private int iconColor = 0;
+    private int textColor = 0;
+    private int imageResource = 0;
+    private int audioBgResource = 0;
 
     public AudiosListAdapter() {
         audioList = new ArrayList<>();
@@ -42,7 +49,6 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
     public void setBookmarkAudioIds(List<Integer> audioIds) {
         List<Integer> previousBookmarkAudioIds = new ArrayList<>(bookmarkAudioIds);
         bookmarkAudioIds = audioIds;
-
         // Find the changed position
         int changedPosition = 0;
         for (int i = 0; i < audioList.size(); i++) {
@@ -58,6 +64,10 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
 
     public void setOnAudioClickListener(OnAudioClickListener listener) {
         onAudioClickListener = listener;
+    }
+
+    public void setCurrentIndex(int currentIndex) {
+        this.currentIndex = currentIndex;
     }
 
     @NonNull
@@ -89,19 +99,19 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
 
             binding.audioItemLayout.setOnClickListener(v -> {
                 if (onAudioClickListener != null) {
-                    onAudioClickListener.onItemClick(audioList.get(getAdapterPosition()));
+                    onAudioClickListener.onItemClick(audioList.get(getAdapterPosition()), getAdapterPosition());
                 }
             });
 
             binding.playIcon.setOnClickListener(v -> {
                 if (onAudioClickListener != null) {
-                    onAudioClickListener.onIconClick(binding, binding.playIcon, audioList.get(getAdapterPosition()));
+                    onAudioClickListener.onIconClick(binding, binding.playIcon, audioList.get(getAdapterPosition()), getAdapterPosition());
                 }
             });
 
             binding.bookmarkIcon.setOnClickListener(v -> {
                 if (onAudioClickListener != null) {
-                    onAudioClickListener.onIconClick(binding, binding.bookmarkIcon, audioList.get(getAdapterPosition()));
+                    onAudioClickListener.onIconClick(binding, binding.bookmarkIcon, audioList.get(getAdapterPosition()), getAdapterPosition());
                 }
             });
         }
@@ -132,13 +142,51 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
                     }
                 }
             }
+            if (currentIndex == getAdapterPosition()) {
+                switch (status) {
+                    case AppConstant.NONE:
+                        imgContentDesc = AppConstant.PLAY_ICON;
+                        iconColor = Color.parseColor("#1C89DA");
+                        textColor = Color.parseColor("#000000");
+                        imageResource = R.drawable.ic_play_circle_outline;
+                        audioBgResource = R.drawable.card_background;
+                        break;
+                    case AppConstant.PLAY:
+                        imgContentDesc = AppConstant.PAUSE_ICON;
+                        iconColor = Color.parseColor("#ffffff");
+                        textColor = Color.parseColor("#ffffff");
+                        imageResource = R.drawable.ic_pause_circle_outline;
+                        audioBgResource = R.drawable.blue_btn_background;
+                        break;
+                    case AppConstant.STOP:
+                        imgContentDesc = AppConstant.PLAY_ICON;
+                        iconColor = Color.parseColor("#ffffff");
+                        textColor = Color.parseColor("#ffffff");
+                        imageResource = R.drawable.ic_play_circle_outline;
+                        audioBgResource = R.drawable.blue_btn_background;
+                        break;
+                }
+            } else {
+                imgContentDesc = AppConstant.PLAY_ICON;
+                iconColor = Color.parseColor("#1C89DA");
+                textColor = Color.parseColor("#000000");
+                imageResource = R.drawable.ic_play_circle_outline;
+                audioBgResource = R.drawable.card_background;
+            }
+            binding.playIcon.setContentDescription(imgContentDesc);
+            binding.playIcon.setColorFilter(iconColor);
+            binding.bookmarkIcon.setColorFilter(iconColor);
+            binding.playIcon.setImageResource(imageResource);
+            binding.audioItemLayout.setBackgroundResource(audioBgResource);
+            binding.audioTitle.setTextColor(textColor);
+            binding.durationTxt.setTextColor(textColor);
         }
     }
 
     public interface OnAudioClickListener {
-        void onItemClick(Audio audio);
+        void onItemClick(Audio audio, int position);
 
-        void onIconClick(AudioItemLayoutBinding binding, ImageView imageView, Audio audio);
+        void onIconClick(AudioItemLayoutBinding binding, ImageView imageView, Audio audio, int position);
     }
 
     public void searchList(String keyword) {

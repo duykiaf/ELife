@@ -1,10 +1,17 @@
 package t3h.android.elife.ui;
 
+import android.app.Service;
+import android.content.ComponentName;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.PorterDuff;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,6 +33,7 @@ import t3h.android.elife.helper.AudioHelper;
 import t3h.android.elife.models.Audio;
 import t3h.android.elife.models.Topic;
 import t3h.android.elife.repositories.MainRepository;
+import t3h.android.elife.services.MainService;
 
 public class AudiosListFragment extends Fragment {
     private FragmentAudiosListBinding binding;
@@ -167,17 +175,104 @@ public class AudiosListFragment extends Fragment {
         binding.audiosRcv.setLayoutManager(new LinearLayoutManager(requireActivity()));
     }
 
+    private MainService mainService;
+    private MainService.AudioBinder audioBinder;
+    private boolean isServiceConnection;
+    private ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            Log.e("DNV", "onServiceConnected");
+            audioBinder = (MainService.AudioBinder) iBinder;
+            audioBinder.getAudioList().observe(requireActivity(), audioList -> {
+                if (audioBinder.getAudioController().isPlaying()) {
+                    adapter.status = AppConstant.PLAY;
+                } else {
+                    adapter.status = AppConstant.STOP;
+                }
+                adapter.setCurrentIndex(audioBinder.getAudioController().getCurrentIndex());
+            });
+            mainService = audioBinder.getMainService();
+            isServiceConnection = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            Log.e("DNV", "onServiceDisconnected");
+            mainService = null;
+            isServiceConnection = false;
+        }
+    };
+
+    private void clickStartService() {
+        Log.e("DNV", "clickStartService");
+        Intent intent = new Intent(requireActivity(), MainService.class);
+        Bundle bundle = new Bundle();
+        bundle.putInt("TopicId", topicInfo.getId());
+        intent.putExtras(bundle);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            requireContext().startForegroundService(intent);
+        }
+        requireContext().bindService(intent, serviceConnection, Service.BIND_AUTO_CREATE);
+    }
+
+    private void clickStopService() {
+        Intent intent = new Intent(requireActivity(), MainService.class);
+        requireContext().stopService(intent);
+        if (isServiceConnection) {
+            requireContext().unbindService(serviceConnection);
+            isServiceConnection = false;
+        }
+    }
+
     private void onItemSelected(AudiosListAdapter adapter) {
         adapter.setOnAudioClickListener(new AudiosListAdapter.OnAudioClickListener() {
             @Override
-            public void onItemClick(Audio audio) {
-                Toast.makeText(requireActivity(), audio.getTitle(), Toast.LENGTH_SHORT).show();
+            public void onItemClick(Audio audio, int position) {
+                clickStartService();
+                if (position == audioBinder.getAudioController().getCurrentIndex()) {
+                    if (audioBinder.getAudioController().isPlaying()) {
+                        // pause audio
+                        isPlaying = false;
+                        adapter.status = AppConstant.STOP;
+                    } else {
+                        // play audio
+                        isPlaying = true;
+                        adapter.status = AppConstant.PLAY;
+                    }
+                } else {
+                    // stop old audio then start new audio
+                    isPlaying = true;
+                    adapter.status = AppConstant.PLAY;
+                    adapter.setCurrentIndex(position);
+                    adapter.notifyItemChanged(audioBinder.getAudioController().getCurrentIndex());
+                    audioBinder.getMainService().playAudioAt(position);
+                }
             }
 
             @Override
-            public void onIconClick(AudioItemLayoutBinding binding, ImageView imageView, Audio audio) {
+            public void onIconClick(AudioItemLayoutBinding binding, ImageView imageView, Audio audio, int position) {
                 switch (imageView.getId()) {
                     case R.id.playIcon:
+                        clickStartService();
+                        if (position == audioBinder.getAudioController().getCurrentIndex()) {
+                            if (audioBinder.getAudioController().isPlaying()) {
+                                // pause audio
+                                isPlaying = false;
+                                adapter.status = AppConstant.STOP;
+                            } else {
+                                // play audio
+                                isPlaying = true;
+                                adapter.status = AppConstant.PLAY;
+                            }
+                        } else {
+                            // stop old audio then start new audio
+                            isPlaying = true;
+                            adapter.status = AppConstant.PLAY;
+                            adapter.setCurrentIndex(position);
+                            adapter.notifyItemChanged(audioBinder.getAudioController().getCurrentIndex());
+                            audioBinder.getMainService().playAudioAt(position);
+                        }
+
                         if (imageView.getContentDescription().equals(AppConstant.PLAY_ICON)) {
                             isPlaying = true;
                             imgContentDesc = AppConstant.PAUSE_ICON;
