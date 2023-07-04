@@ -1,11 +1,14 @@
 package t3h.android.elife.helper;
 
+import android.graphics.Color;
+
 public class AppConstant {
     public static final String DURATION_DEFAULT = "0:00";
     public static final String BOOKMARKS_LIST = "Bookmarks list";
     public static final String TOPICS = "Topics";
     public static final String PLAY_ICON = "PlayIcon";
     public static final String PAUSE_ICON = "PauseIcon";
+    public static final String UNABLE_ICON = "UnableIcon";
     public static final String BOOKMARK_BORDER_ICON = "BookmarkBorderIcon";
     public static final String BOOKMARK_ICON = "BookmarkIcon";
     public static final String ADD_BOOKMARK_SUCCESSFULLY = "Add bookmark successfully!";
@@ -17,8 +20,13 @@ public class AppConstant {
     public static final int NONE = 0;
     public static final int PLAY = 1;
     public static final int STOP = 2;
-
+    public static final int ACTION_PAUSE = 1;
+    public static final int ACTION_RESUME = 2;
+    public static final int ACTION_CLEAR = 3;
+    public static final int ACTION_START = 4;
     public static final String CHANNEL_ID = "t3h.android.elife.ELIFE_CHANNEL";
     public static final String CHANNEL_NAME = "Elife";
     public static final int NOTIFICATION_ID = 1;
+    public static final int DISABLE_COLOR = Color.parseColor("#A298FA");
+    public static final int ENABLE_COLOR = Color.parseColor("#1C89DA");
 }
