@@ -26,7 +26,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    buildFeatures{
+    buildFeatures {
         dataBinding true
     }
 }
@@ -54,4 +54,7 @@ dependencies {
     annotationProcessor "androidx.room:room-compiler:$room_version"
 
     implementation "androidx.media:media:1.6.0"
+
+    //exoplayer
+    implementation 'com.google.android.exoplayer:exoplayer:2.18.7'
 }
