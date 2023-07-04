@@ -32,7 +32,7 @@
                 android:fontFamily="@font/ubuntu_bold"
                 android:includeFontPadding="false"
                 android:maxLines="1"
-                android:text="@string/this_is_audio_title"
+                android:text="@string/audio_title"
                 android:textColor="@color/primaryColor"
                 android:textSize="@dimen/title_txt_size"
                 app:layout_constraintEnd_toEndOf="parent"
