@@ -1,13 +1,12 @@
 package t3h.android.elife.ui;
 
-import android.app.Service;
-import android.content.ComponentName;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
+import android.content.IntentFilter;
 import android.graphics.PorterDuff;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.TextWatcher;
@@ -22,7 +21,17 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
+
+import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.MediaItem;
+import com.google.android.exoplayer2.MediaMetadata;
+import com.google.android.exoplayer2.Player;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 import t3h.android.elife.R;
 import t3h.android.elife.adapters.AudiosListAdapter;
@@ -37,21 +46,35 @@ import t3h.android.elife.services.MainService;
 
 public class AudiosListFragment extends Fragment {
     private FragmentAudiosListBinding binding;
-    private boolean isPlaying = false;
     private int iconColor = 0;
     private String imgContentDesc;
     private int imageResource = 0;
-    private int audioBgResource = 0;
     private boolean isBookmarksList = false;
     private boolean isSearching = false;
+    private boolean wasRemovedBookmark;
     private Topic topicInfo;
     private AudiosListAdapter adapter = new AudiosListAdapter();
+    private AudiosListAdapter bookmarksListAdapter = new AudiosListAdapter();
     private final MainRepository mainRepository = new MainRepository();
     private final AudioHelper audioHelper = new AudioHelper();
+    private ExoPlayer player;
+    private Audio audio;
+    private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Bundle bundle = intent.getExtras();
+            if (bundle == null) {
+                return;
+            }
+            audio = (Audio) bundle.get("AudioInfo");
+            //isPlaying = bundle.getBoolean("AudioStatus");
+            handleMinimizeAudioLayout(bundle.getInt("AudioAction"));
+        }
+    };
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        LocalBroadcastManager.getInstance(requireActivity()).registerReceiver(broadcastReceiver, new IntentFilter("DataFromService"));
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_audios_list, container, false);
         return binding.getRoot();
     }
@@ -59,14 +82,16 @@ public class AudiosListFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        player = new ExoPlayer.Builder(requireActivity()).build();
+        player.setRepeatMode(Player.REPEAT_MODE_ALL);
         isBookmarksList = requireArguments().getBoolean("isBookmarksList");
         if (!isBookmarksList) {
             topicInfo = (Topic) requireArguments().get("topicInfo");
             initTopAppBarUI(false);
-            initAudiosList();
+            initAudiosList(player);
         } else {
             initTopAppBarUI(true);
-            loadBookmarksList();
+            loadBookmarksList(player);
         }
     }
 
@@ -83,25 +108,29 @@ public class AudiosListFragment extends Fragment {
     public void onResume() {
         super.onResume();
         onBackPressed();
-        onMenuItemSelected();
-        onItemSelected(adapter);
         binding.goToTopImageView.setOnClickListener(v -> binding.audiosRcv.smoothScrollToPosition(0));
     }
 
-    private void initAudiosList() {
+    private void initAudiosList(ExoPlayer player) {
         MainRepository mainRepoForDao = new MainRepository(requireActivity().getApplication());
         mainRepoForDao.getAudioIds().observe(requireActivity(), adapter::setBookmarkAudioIds);
         mainRepository.getActiveAudiosListByTopicId(topicInfo.getId()).observe(requireActivity(), audioList -> {
+            Audio firstAudio = null;
             if (audioList != null && audioList.size() > 0) {
                 binding.noDataTxt.setVisibility(View.GONE);
-                setBtnState(true);
-                adapter.setAudioList(audioList);
+                firstAudio = audioList.get(0);
+                player.setMediaItems(getMediaItems(audioList));
             } else {
                 binding.noDataTxt.setVisibility(View.VISIBLE);
-                setBtnState(false);
+                player.clearMediaItems();
             }
+            adapter.setAudioList(audioList);
+            adapter.setPlayer(player);
+            initAudioControlLayout(adapter, firstAudio, player);
         });
         initRcv(adapter);
+        onMenuItemSelected(player);
+        onItemSelected(adapter, player);
     }
 
     private void onBackPressed() {
@@ -112,20 +141,19 @@ public class AudiosListFragment extends Fragment {
         }
     }
 
-    private void onMenuItemSelected() {
+    private void onMenuItemSelected(ExoPlayer player) {
         binding.appBarFragment.topAppBar.setOnMenuItemClickListener(menuItem -> {
             switch (menuItem.getItemId()) {
                 case R.id.searchItem:
                     if (binding.searchEdt.getVisibility() == View.VISIBLE) {
-                        setBtnState(true);
-                        resetSearchFeature();
+                        resetSearchFeature(player);
                     } else {
                         isSearching = true;
                         setSearchLayoutState(true);
                         binding.searchEdt.requestFocus();
-                        setBtnState(false);
+                        binding.audioControlLayout.setVisibility(View.GONE);
                         if (!isBookmarksList) {
-                            loadSearchList(adapter);
+                            loadSearchList(adapter, player);
                         }
                     }
                     return true;
@@ -133,7 +161,7 @@ public class AudiosListFragment extends Fragment {
                     if (!isBookmarksList) {
                         initTopAppBarUI(true);
                         isBookmarksList = true;
-                        resetSearchFeature();
+                        resetSearchFeature(player);
                     }
                     return true;
             }
@@ -141,32 +169,40 @@ public class AudiosListFragment extends Fragment {
         });
     }
 
-    private void loadBookmarksList() {
-        AudiosListAdapter adapter = new AudiosListAdapter();
+    private void loadBookmarksList(ExoPlayer player) {
         MainRepository mainRepoForDao = new MainRepository(requireActivity().getApplication());
-        mainRepoForDao.getAudioIds().observe(requireActivity(), adapter::setBookmarkAudioIds);
+        mainRepoForDao.getAudioIds().observe(requireActivity(), audioIds -> bookmarksListAdapter.setBookmarkAudioIds(audioIds));
         mainRepoForDao.getBookmarksList().observe(requireActivity(), audioList -> {
             if (audioList != null && audioList.size() > 0) {
                 if (binding != null) {
                     binding.noDataTxt.setVisibility(View.GONE);
+                    Audio firstAudio = audioList.get(0);
+                    if (wasRemovedBookmark) {
+                        player.setMediaItems(getMediaItems(audioList), bookmarksListAdapter.getCurrentIndex(), 0);
+                    } else {
+                        player.setMediaItems(getMediaItems(audioList));
+                    }
+                    bookmarksListAdapter.setAudioList(audioList);
+                    bookmarksListAdapter.setPlayer(player);
+                    initAudioControlLayout(bookmarksListAdapter, firstAudio, player);
                     if (isSearching) {
                         binding.searchEdt.setText("");
-                        setBtnState(false);
-                    } else {
-                        setBtnState(true);
                     }
                 }
-                adapter.setAudioList(audioList);
             } else {
                 if (binding != null) {
                     binding.noDataTxt.setVisibility(View.VISIBLE);
-                    setBtnState(false);
+                    player.clearMediaItems();
+                    bookmarksListAdapter.setAudioList(audioList);
+                    bookmarksListAdapter.setPlayer(player);
+                    initAudioControlLayout(bookmarksListAdapter, null, player);
                 }
             }
         });
-        initRcv(adapter);
-        loadSearchList(adapter);
-        onItemSelected(adapter);
+        initRcv(bookmarksListAdapter);
+        onMenuItemSelected(player);
+        loadSearchList(bookmarksListAdapter, player);
+        onItemSelected(bookmarksListAdapter, player);
     }
 
     private void initRcv(AudiosListAdapter adapter) {
@@ -175,128 +211,217 @@ public class AudiosListFragment extends Fragment {
         binding.audiosRcv.setLayoutManager(new LinearLayoutManager(requireActivity()));
     }
 
-    private MainService mainService;
-    private MainService.AudioBinder audioBinder;
-    private boolean isServiceConnection;
-    private ServiceConnection serviceConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            Log.e("DNV", "onServiceConnected");
-            audioBinder = (MainService.AudioBinder) iBinder;
-            audioBinder.getAudioList().observe(requireActivity(), audioList -> {
-                if (audioBinder.getAudioController().isPlaying()) {
-                    adapter.status = AppConstant.PLAY;
-                } else {
-                    adapter.status = AppConstant.STOP;
+    private void initAudioControlLayout(AudiosListAdapter adapter, Audio audioInfo, ExoPlayer player) {
+        if (audioInfo != null) {
+            binding.audioControlLayout.setVisibility(View.VISIBLE);
+            binding.audioTitle.setText(audioInfo.getTitle());
+            initPlayOrPauseIcon(player);
+            playerControls(adapter, player);
+        } else {
+            binding.audioControlLayout.setVisibility(View.GONE);
+        }
+    }
+
+    private void playerControls(AudiosListAdapter adapter, ExoPlayer player) {
+        binding.previousIcon.setOnClickListener(v -> {
+            if (player.hasPreviousMediaItem()) {
+                player.seekToPrevious();
+                setPrepareAndPlay(player);
+                adapterNotifyItemChanged(adapter, player);
+            }
+        });
+
+        binding.nextIcon.setOnClickListener(v -> {
+            if (player.hasNextMediaItem()) {
+                player.seekToNext();
+                setPrepareAndPlay(player);
+                adapterNotifyItemChanged(adapter, player);
+            }
+        });
+
+        binding.playOrPauseIcon.setOnClickListener(v -> {
+            if (player.isPlaying()) {
+                player.pause();
+                adapter.status = AppConstant.STOP;
+                binding.playOrPauseIcon.setImageResource(R.drawable.ic_play_circle_outline);
+            } else {
+                binding.playOrPauseIcon.setImageResource(R.drawable.ic_pause_circle_outline);
+                setPrepareAndPlay(player);
+                adapter.status = AppConstant.PLAY;
+                if (adapter.getCurrentIndex() == 0) {
+                    adapter.setCurrentIndex(player.getCurrentMediaItemIndex());
                 }
-                adapter.setCurrentIndex(audioBinder.getAudioController().getCurrentIndex());
-            });
-            mainService = audioBinder.getMainService();
-            isServiceConnection = true;
-        }
+            }
+            adapter.notifyItemChanged(adapter.getCurrentIndex());
+        });
 
-        @Override
-        public void onServiceDisconnected(ComponentName componentName) {
-            Log.e("DNV", "onServiceDisconnected");
-            mainService = null;
-            isServiceConnection = false;
-        }
-    };
+        playerListener(adapter, player);
+    }
 
-    private void clickStartService() {
-        Log.e("DNV", "clickStartService");
-        Intent intent = new Intent(requireActivity(), MainService.class);
+    private List<MediaItem> getMediaItems(List<Audio> audioList) {
+        List<MediaItem> mediaItems = new ArrayList<>();
+        for (Audio audio : audioList) {
+            MediaItem mediaItem = new MediaItem.Builder()
+                    .setUri(audio.getAudioFile())
+                    .setMediaMetadata(getMetadata(audio))
+                    .build();
+            mediaItems.add(mediaItem);
+        }
+        return mediaItems;
+    }
+
+    private MediaMetadata getMetadata(Audio audio) {
+        return new MediaMetadata.Builder()
+                .setTitle(audio.getTitle())
+                .build();
+    }
+
+    private void playerListener(AudiosListAdapter adapter, ExoPlayer player) {
+        player.addListener(new Player.Listener() {
+            @Override
+            public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {
+                if (mediaItem != null) {
+                    if (player.hasNextMediaItem() && reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
+                        player.seekToNextMediaItem();
+                        adapterNotifyItemChanged(adapter, player);
+                    }
+                    binding.audioTitle.setText(mediaItem.mediaMetadata.title);
+                }
+            }
+
+            @Override
+            public void onPlaybackStateChanged(int playbackState) {
+                if (playbackState == ExoPlayer.STATE_READY) {
+                    binding.audioTitle.setText(Objects.requireNonNull(player.getCurrentMediaItem()).mediaMetadata.title);
+                    binding.playOrPauseIcon.setImageResource(R.drawable.ic_pause_circle_outline);
+                }
+                if (wasRemovedBookmark && !player.isPlaying() && binding != null) {
+                    if (player.getCurrentMediaItem() != null) {
+                        binding.audioTitle.setText(player.getCurrentMediaItem().mediaMetadata.title);
+                    }
+                    binding.playOrPauseIcon.setImageResource(R.drawable.ic_play_circle_outline);
+                }
+            }
+        });
+    }
+
+    private void setPrepareAndPlay(ExoPlayer player) {
+        player.prepare();
+        player.play();
+    }
+
+    private void adapterNotifyItemChanged(AudiosListAdapter adapter, ExoPlayer player) {
+        if (adapter.getCurrentIndex() != player.getCurrentMediaItemIndex()) {
+            adapter.notifyItemChanged(adapter.getCurrentIndex());
+        }
+        adapter.setCurrentIndex(player.getCurrentMediaItemIndex());
+        adapter.status = AppConstant.PLAY;
+        adapter.notifyItemChanged(player.getCurrentMediaItemIndex());
+    }
+
+    private void initAudioDuration(Audio audioInfo) {
+        binding.audioCurrentTime.setText(getResources().getString(R.string.audio_duration));
+        AudioHelper.getAudioDuration(audioInfo.getAudioFile(), new AudioHelper.DurationCallback() {
+            @Override
+            public void onDurationReceived(String durationStr) {
+                binding.audioDuration.setText(durationStr);
+            }
+
+            @Override
+            public void onDurationError() {
+                binding.audioDuration.setText(AppConstant.DURATION_DEFAULT);
+            }
+        });
+    }
+
+    private void initPrevAndNextIcon(int audioPosition, int audioListSize) {
+        if (audioPosition == 0 && audioPosition != audioListSize - 1) {
+            setUnablePrevIcon();
+            binding.nextIcon.setColorFilter(AppConstant.ENABLE_COLOR);
+        } else if (audioPosition != 0 && audioPosition == audioListSize - 1) {
+            binding.previousIcon.setColorFilter(AppConstant.ENABLE_COLOR);
+            setUnableNextIcon();
+        } else if (audioPosition > 0 && audioPosition < audioListSize - 1) {
+            binding.previousIcon.setColorFilter(AppConstant.ENABLE_COLOR);
+            binding.nextIcon.setColorFilter(AppConstant.ENABLE_COLOR);
+        } else {
+            setUnablePrevIcon();
+            setUnableNextIcon();
+        }
+    }
+
+    private void setUnablePrevIcon() {
+        binding.previousIcon.setContentDescription(AppConstant.UNABLE_ICON);
+        binding.previousIcon.setColorFilter(AppConstant.DISABLE_COLOR);
+    }
+
+    private void setUnableNextIcon() {
+        binding.nextIcon.setContentDescription(AppConstant.UNABLE_ICON);
+        binding.nextIcon.setColorFilter(AppConstant.DISABLE_COLOR);
+    }
+
+    private void initPlayOrPauseIcon(ExoPlayer player) {
+        if (player.isPlaying()) {
+            binding.playOrPauseIcon.setImageResource(R.drawable.ic_pause_circle_outline);
+        } else {
+            binding.playOrPauseIcon.setImageResource(R.drawable.ic_play_circle_outline);
+        }
+    }
+
+    private void playOrPauseAudioOnService(Audio audio) {
         Bundle bundle = new Bundle();
-        bundle.putInt("TopicId", topicInfo.getId());
+        bundle.putSerializable("audio", audio);
+        Intent intent = new Intent(requireActivity(), MainService.class);
         intent.putExtras(bundle);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             requireContext().startForegroundService(intent);
+        } else {
+            requireContext().startService(intent);
         }
-        requireContext().bindService(intent, serviceConnection, Service.BIND_AUTO_CREATE);
     }
 
     private void clickStopService() {
         Intent intent = new Intent(requireActivity(), MainService.class);
         requireContext().stopService(intent);
-        if (isServiceConnection) {
-            requireContext().unbindService(serviceConnection);
-            isServiceConnection = false;
-        }
     }
 
-    private void onItemSelected(AudiosListAdapter adapter) {
+    private void onItemSelected(AudiosListAdapter adapter, ExoPlayer player) {
         adapter.setOnAudioClickListener(new AudiosListAdapter.OnAudioClickListener() {
             @Override
             public void onItemClick(Audio audio, int position) {
-                clickStartService();
-                if (position == audioBinder.getAudioController().getCurrentIndex()) {
-                    if (audioBinder.getAudioController().isPlaying()) {
-                        // pause audio
-                        isPlaying = false;
-                        adapter.status = AppConstant.STOP;
-                    } else {
-                        // play audio
-                        isPlaying = true;
-                        adapter.status = AppConstant.PLAY;
-                    }
-                } else {
-                    // stop old audio then start new audio
-                    isPlaying = true;
-                    adapter.status = AppConstant.PLAY;
-                    adapter.setCurrentIndex(position);
-                    adapter.notifyItemChanged(audioBinder.getAudioController().getCurrentIndex());
-                    audioBinder.getMainService().playAudioAt(position);
-                }
+                Toast.makeText(requireActivity(), "Open Audio Details", Toast.LENGTH_SHORT).show();
+//                playOrPauseAudioOnService(audio);
             }
 
             @Override
-            public void onIconClick(AudioItemLayoutBinding binding, ImageView imageView, Audio audio, int position) {
+            public void onIconClick(AudioItemLayoutBinding binding, ImageView imageView, Audio audio,
+                                    int position, List<Audio> audioList) {
                 switch (imageView.getId()) {
                     case R.id.playIcon:
-                        clickStartService();
-                        if (position == audioBinder.getAudioController().getCurrentIndex()) {
-                            if (audioBinder.getAudioController().isPlaying()) {
-                                // pause audio
-                                isPlaying = false;
-                                adapter.status = AppConstant.STOP;
-                            } else {
-                                // play audio
-                                isPlaying = true;
-                                adapter.status = AppConstant.PLAY;
+                        if (!isSearching) {
+                            if (adapter.getCurrentIndex() != position) {
+                                adapter.notifyItemChanged(adapter.getCurrentIndex());
                             }
-                        } else {
-                            // stop old audio then start new audio
-                            isPlaying = true;
-                            adapter.status = AppConstant.PLAY;
-                            adapter.setCurrentIndex(position);
-                            adapter.notifyItemChanged(audioBinder.getAudioController().getCurrentIndex());
-                            audioBinder.getMainService().playAudioAt(position);
-                        }
 
-                        if (imageView.getContentDescription().equals(AppConstant.PLAY_ICON)) {
-                            isPlaying = true;
-                            imgContentDesc = AppConstant.PAUSE_ICON;
-                            iconColor = getResources().getColor(R.color.white);
-                            imageResource = R.drawable.ic_pause_circle_outline;
-                            audioBgResource = R.drawable.blue_btn_background;
-                            setAudioTextColor(binding, iconColor);
+                            adapter.setCurrentIndex(position);
+                            // play audio
+                            if (imageView.getContentDescription().equals(AppConstant.PLAY_ICON)) {
+                                adapter.status = AppConstant.PLAY;
+                                adapter.notifyItemChanged(adapter.getCurrentIndex());
+                            }
+                            // pause audio
+                            if (imageView.getContentDescription().equals(AppConstant.PAUSE_ICON)) {
+                                adapter.status = AppConstant.STOP;
+                                adapter.notifyItemChanged(adapter.getCurrentIndex());
+                            }
+                            initAudioControlLayout(adapter, audio, player);
+                        } else {
+                            Toast.makeText(requireActivity(), "Open Audio Details", Toast.LENGTH_SHORT).show();
                         }
-                        if (imageView.getContentDescription().equals(AppConstant.PAUSE_ICON)) {
-                            isPlaying = false;
-                            imgContentDesc = AppConstant.PLAY_ICON;
-                            iconColor = getResources().getColor(R.color.primaryColor);
-                            imageResource = R.drawable.ic_play_circle_outline;
-                            audioBgResource = R.drawable.card_background;
-                            setAudioTextColor(binding, getResources().getColor(R.color.black));
-                        }
-                        imageView.setContentDescription(imgContentDesc);
-                        binding.playIcon.setColorFilter(iconColor);
-                        binding.bookmarkIcon.setColorFilter(iconColor);
-                        imageView.setImageResource(imageResource);
-                        binding.audioItemLayout.setBackgroundResource(audioBgResource);
+//                        playOrPauseAudioOnService(audio);
                         break;
                     case R.id.bookmarkIcon:
-                        if (isPlaying) {
+                        if (player.isPlaying()) {
                             iconColor = getResources().getColor(R.color.white);
                         } else {
                             iconColor = getResources().getColor(R.color.primaryColor);
@@ -310,7 +435,7 @@ public class AudiosListFragment extends Fragment {
                         if (imageView.getContentDescription().equals(AppConstant.BOOKMARK_ICON)) {
                             imgContentDesc = AppConstant.BOOKMARK_BORDER_ICON;
                             imageResource = R.drawable.ic_bookmark_border;
-                            removeBookmark(audio);
+                            removeBookmark(adapter, audio, position, player);
                         }
                         imageView.setContentDescription(imgContentDesc);
                         imageView.setImageResource(imageResource);
@@ -320,12 +445,7 @@ public class AudiosListFragment extends Fragment {
         });
     }
 
-    private void setAudioTextColor(AudioItemLayoutBinding audioItemLayoutBinding, int colorResource) {
-        audioItemLayoutBinding.audioTitle.setTextColor(colorResource);
-        audioItemLayoutBinding.durationTxt.setTextColor(colorResource);
-    }
-
-    private void loadSearchList(AudiosListAdapter adapter) {
+    private void loadSearchList(AudiosListAdapter adapter, ExoPlayer player) {
         binding.searchEdt.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
@@ -347,23 +467,18 @@ public class AudiosListFragment extends Fragment {
                 adapter.searchList(editable.toString().trim().toLowerCase());
             }
         });
-        binding.closeSearchLayout.setOnClickListener(v -> resetSearchFeature());
+        binding.closeSearchLayout.setOnClickListener(v -> resetSearchFeature(player));
     }
 
-    private void resetSearchFeature() {
+    private void resetSearchFeature(ExoPlayer player) {
         isSearching = false;
         setSearchLayoutState(false);
         binding.searchEdt.setText("");
         if (isBookmarksList) {
-            loadBookmarksList();
+            loadBookmarksList(player);
         } else {
-            initAudiosList();
+            initAudiosList(player);
         }
-    }
-
-    private void setBtnState(boolean isVisible) {
-        binding.playAllBtn.setVisibility(getState(isVisible));
-        binding.repeatSettingBtn.setVisibility(getState(isVisible));
     }
 
     private void setSearchLayoutState(boolean isVisible) {
@@ -385,23 +500,75 @@ public class AudiosListFragment extends Fragment {
         });
     }
 
-    private void removeBookmark(Audio audio) {
+    private void removeBookmark(AudiosListAdapter adapter, Audio audio, int position, ExoPlayer player) {
         audioHelper.removeBookmark(requireActivity(), audio, deletedRow -> {
             if (deletedRow > 0) {
                 Toast.makeText(requireActivity(), AppConstant.REMOVE_BOOKMARK_SUCCESSFULLY, Toast.LENGTH_SHORT).show();
+                if (isBookmarksList) {
+                    wasRemovedBookmark = true;
+                    initTopAppBarUI(true);
+                    if (adapter.status != AppConstant.NONE) {
+                        if (player.getMediaItemCount() > 1 && position >= player.getCurrentMediaItemIndex()) {
+                            bookmarksAdapterNotifyItemChanged(adapter, player, player.getCurrentMediaItemIndex());
+                        } else if (player.getMediaItemCount() > 1 && position < player.getCurrentMediaItemIndex()) {
+                            bookmarksAdapterNotifyItemChanged(adapter, player, player.getCurrentMediaItemIndex() - 1);
+                        }
+                    }
+                    loadBookmarksList(player);
+                }
             } else {
                 Toast.makeText(requireActivity(), AppConstant.REMOVE_BOOKMARK_FAILED, Toast.LENGTH_SHORT).show();
             }
-            if (isBookmarksList) {
-                initTopAppBarUI(true);
-                loadBookmarksList();
-            }
         });
+    }
+
+    private void bookmarksAdapterNotifyItemChanged(AudiosListAdapter adapter, ExoPlayer player, int position) {
+        adapter.setCurrentIndex(position);
+        setAdapterStatusByPlayerState(player);
+        adapter.notifyItemChanged(position);
+    }
+
+    private void setAdapterStatusByPlayerState(ExoPlayer player) {
+        if (player.isPlaying()) {
+            adapter.status = AppConstant.PLAY;
+        } else {
+            adapter.status = AppConstant.STOP;
+        }
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
+        if (player.isPlaying()) {
+            player.stop();
+        }
+        player.release();
+        LocalBroadcastManager.getInstance(requireActivity()).unregisterReceiver(broadcastReceiver);
+    }
+
+    private void handleMinimizeAudioLayout(int action) {
+        switch (action) {
+            case AppConstant.ACTION_START:
+                // show minimize audio layout and audio playing info
+                break;
+            case AppConstant.ACTION_PAUSE:
+                break;
+            case AppConstant.ACTION_RESUME:
+                break;
+            case AppConstant.ACTION_CLEAR:
+                break;
+        }
+    }
+
+    private void sendActionToService(int action) {
+        Intent intent = new Intent(requireActivity(), MainService.class);
+        intent.putExtra("AudioActionToService", action);
+        intent.putExtra("AudioInfoToService", audio);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            requireContext().startForegroundService(intent);
+        } else {
+            requireContext().startService(intent);
+        }
     }
 }
