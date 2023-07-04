@@ -1,110 +1,158 @@
 package t3h.android.elife.services;
 
-import android.Manifest;
-import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.os.Binder;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
-import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
-import androidx.lifecycle.LiveData;
-
-import java.util.List;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import t3h.android.elife.R;
 import t3h.android.elife.helper.AppConstant;
-import t3h.android.elife.helper.AudioController;
+import t3h.android.elife.helper.MainReceiver;
 import t3h.android.elife.models.Audio;
-import t3h.android.elife.repositories.MainRepository;
 
 public class MainService extends Service {
-    private AudioController audioController;
-    private MainRepository mainRepository;
-    private LiveData<List<Audio>> audioList;
+    private MediaPlayer mediaPlayer;
+    private boolean isPlaying;
+    private Audio audio, oldAudio;
 
     @Override
     public void onCreate() {
         super.onCreate();
         Log.e("DNV", "onCreate-service");
-        mainRepository = new MainRepository();
-        audioController = new AudioController(new AudioController.AudioSource() {
-            @Override
-            public int getSize() {
-                return 0;
-            }
-
-            @Override
-            public Audio getAudioAtIndex(int index) {
-                return null;
-            }
-        });
     }
 
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
         Log.e("DNV", "onBind-service");
-        return new AudioBinder();
+        return null;
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.e("DNV", "onStartCommand-service");
+        // get intent form fragment
         Bundle bundle = intent.getExtras();
         if (bundle != null) {
-            audioList = mainRepository.getActiveAudiosListByTopicId((Integer) bundle.get("TopicId"));
+            oldAudio = audio;
+            Audio getAudio = (Audio) bundle.get("audio");
+            if (getAudio != null) {
+                audio = getAudio;
+                startAudio();
+                sendNotification();
+            } else {
+                // get intent from BroadcastReceiver or fragment when click control audio icon
+                int audioAction = intent.getIntExtra("AudioActionToService", 0);
+                audio = (Audio) intent.getSerializableExtra("AudioInfoToService");
+                handleAudioAction(audioAction);
+            }
         }
-
-        audioController = new AudioController(new AudioController.AudioSource() {
-            @Override
-            public int getSize() {
-                return audioList.getValue() == null ? 0 : audioList.getValue().size();
-            }
-
-            @Override
-            public Audio getAudioAtIndex(int index) {
-                return audioList.getValue() != null ? audioList.getValue().get(index) : null;
-            }
-        });
-
-        sendNotification();
         return START_NOT_STICKY;
     }
 
     private void sendNotification() {
         MediaSessionCompat mediaSessionCompat = new MediaSessionCompat(this, "tag");
-        Notification notification = new NotificationCompat.Builder(this, AppConstant.CHANNEL_ID)
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, AppConstant.CHANNEL_ID)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setSmallIcon(R.drawable.elife_logo)
-                .addAction(R.drawable.ic_bookmark, "Bookmark", null) // #0
-                .addAction(R.drawable.ic_skip_previous, "Previous", null) // #1
-                .addAction(R.drawable.ic_pause_circle_outline, "Pause", null)  // #2
-                .addAction(R.drawable.ic_skip_next, "Next", null)     // #3
-                .addAction(R.drawable.ic_close, "Close", null) // #4
                 .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
                         .setShowActionsInCompactView(0, 1, 2, 3, 4)
                         .setMediaSession(mediaSessionCompat.getSessionToken()))
                 .setContentTitle("Topic name")
-                .setContentText("Audio title")
-                .build();
-        NotificationManagerCompat managerCompat = NotificationManagerCompat.from(this);
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
+                .setContentText(audio.getTitle());
+        if (isPlaying) {
+            notificationBuilder.addAction(R.drawable.ic_bookmark, "Bookmark", null) // #0
+                    .addAction(R.drawable.ic_skip_previous, "Previous", null) // #1
+                    .addAction(R.drawable.ic_pause_circle_outline, "Pause",
+                            getPendingIntent(this, AppConstant.ACTION_PAUSE))  // #2
+                    .addAction(R.drawable.ic_skip_next, "Next", null)     // #3
+                    .addAction(R.drawable.ic_close, "Close", null); // #4
+        } else {
+            notificationBuilder.addAction(R.drawable.ic_bookmark, "Bookmark", null) // #0
+                    .addAction(R.drawable.ic_skip_previous, "Previous", null) // #1
+                    .addAction(R.drawable.ic_play_circle_outline, "Play",
+                            getPendingIntent(this, AppConstant.ACTION_RESUME))  // #2
+                    .addAction(R.drawable.ic_skip_next, "Next", null)     // #3
+                    .addAction(R.drawable.ic_close, "Close", null); // #4
         }
-        managerCompat.notify(AppConstant.NOTIFICATION_ID, notification);
+        startForeground(AppConstant.NOTIFICATION_ID, notificationBuilder.build());
+    }
+
+    private void startAudio() {
+//        if (mediaPlayer == null) {
+//            mediaPlayer = MediaPlayer.create(getApplicationContext(), Uri.parse(audio.getAudioFile()));
+//        }
+        if (oldAudio != null && oldAudio.equals(audio) && mediaPlayer != null) {
+            mediaPlayer = MediaPlayer.create(getApplicationContext(), Uri.parse(oldAudio.getAudioFile()));
+        } else {
+            pauseAudio();
+            mediaPlayer = MediaPlayer.create(getApplicationContext(), Uri.parse(audio.getAudioFile()));
+        }
+        mediaPlayer.start();
+        isPlaying = true;
+        sendActionToFragment(AppConstant.ACTION_START);
+    }
+
+    private PendingIntent getPendingIntent(Context context, int action) {
+        Bundle bundle = new Bundle();
+        bundle.putInt("AudioAction", action);
+        bundle.putSerializable("AudioInfo", audio);
+        Intent intent = new Intent(this, MainReceiver.class);
+        intent.putExtras(bundle);
+        return PendingIntent.getBroadcast(context.getApplicationContext(), action, intent, PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    private void handleAudioAction(int action) {
+        switch (action) {
+            case AppConstant.ACTION_PAUSE:
+                pauseAudio();
+                break;
+            case AppConstant.ACTION_RESUME:
+                resumeAudio();
+                break;
+            case AppConstant.ACTION_CLEAR:
+                stopSelf();
+                sendActionToFragment(AppConstant.ACTION_CLEAR);
+                break;
+        }
+    }
+
+    private void pauseAudio() {
+        if (mediaPlayer != null && isPlaying) {
+            mediaPlayer.pause();
+            isPlaying = false;
+            sendNotification();
+            sendActionToFragment(AppConstant.ACTION_PAUSE);
+        }
+    }
+
+    private void resumeAudio() {
+        if (mediaPlayer != null && !isPlaying) {
+            mediaPlayer.start();
+            isPlaying = true;
+            sendNotification();
+            sendActionToFragment(AppConstant.ACTION_RESUME);
+        }
+    }
+
+    private void sendActionToFragment(int action) {
+        Intent intent = new Intent("DataFromService");
+        Bundle bundle = new Bundle();
+        bundle.putSerializable("AudioInfo", audio);
+        bundle.putBoolean("AudioStatus", isPlaying);
+        bundle.putInt("AudioAction", action);
+        intent.putExtras(bundle);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
     @Override
@@ -117,27 +165,9 @@ public class MainService extends Service {
     public void onDestroy() {
         Log.e("DNV", "onDestroy-service");
         super.onDestroy();
-    }
-
-    public void playAudioAt(int index) {
-        audioController.playAudioAt(index);
-    }
-
-    public void pause() {
-        audioController.pause();
-    }
-
-    public class AudioBinder extends Binder {
-        public MainService getMainService() {
-            return MainService.this;
-        }
-
-        public LiveData<List<Audio>> getAudioList() {
-            return audioList;
-        }
-
-        public AudioController getAudioController() {
-            return audioController;
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
         }
     }
 }

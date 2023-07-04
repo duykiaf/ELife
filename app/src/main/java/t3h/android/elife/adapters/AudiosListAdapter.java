@@ -10,6 +10,10 @@ import android.widget.ImageView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.MediaItem;
+import com.google.android.exoplayer2.MediaMetadata;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -27,13 +31,14 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
     private List<Integer> bookmarkAudioIds;
     private OnAudioClickListener onAudioClickListener;
     private Timer timer;
-    private int currentIndex = -1;
+    private int currentIndex;
     public int status;
     private String imgContentDesc = "";
     private int iconColor = 0;
     private int textColor = 0;
     private int imageResource = 0;
     private int audioBgResource = 0;
+    private ExoPlayer player;
 
     public AudiosListAdapter() {
         audioList = new ArrayList<>();
@@ -44,6 +49,10 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
         this.audioList = audioList;
         dataSource = audioList;
         notifyDataSetChanged();
+    }
+
+    public void setPlayer(ExoPlayer player) {
+        this.player = player;
     }
 
     public void setBookmarkAudioIds(List<Integer> audioIds) {
@@ -68,6 +77,10 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
 
     public void setCurrentIndex(int currentIndex) {
         this.currentIndex = currentIndex;
+    }
+
+    public int getCurrentIndex() {
+        return currentIndex;
     }
 
     @NonNull
@@ -104,24 +117,66 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
             });
 
             binding.playIcon.setOnClickListener(v -> {
+                int pos = getAdapterPosition();
+                MediaItem mediaItem = getMediaItem(audioList.get(getAdapterPosition()));
+                if (player.isPlaying()) {
+                    if (currentIndex == pos) {
+                        player.pause();
+                    } else {
+                        player.seekTo(pos, 0);
+                        player.prepare();
+                        player.play();
+                    }
+                } else {
+                    if (currentIndex != pos) {
+                        player.seekTo(pos, 0);
+                    }
+                    player.prepare();
+                    player.play();
+                }
+
                 if (onAudioClickListener != null) {
-                    onAudioClickListener.onIconClick(binding, binding.playIcon, audioList.get(getAdapterPosition()), getAdapterPosition());
+                    onAudioClickListener.onIconClick(binding, binding.playIcon,
+                            audioList.get(getAdapterPosition()), getAdapterPosition(), audioList);
                 }
             });
 
             binding.bookmarkIcon.setOnClickListener(v -> {
                 if (onAudioClickListener != null) {
-                    onAudioClickListener.onIconClick(binding, binding.bookmarkIcon, audioList.get(getAdapterPosition()), getAdapterPosition());
+                    onAudioClickListener.onIconClick(binding, binding.bookmarkIcon, audioList.get(getAdapterPosition()),
+                            getAdapterPosition(), audioList);
                 }
             });
         }
 
+        private MediaItem getMediaItem(Audio audio) {
+            return new MediaItem.Builder()
+                    .setUri(audio.getAudioFile())
+                    .setMediaMetadata(getMetadata(audio))
+                    .build();
+        }
+
+        private MediaMetadata getMetadata(Audio audio) {
+            return new MediaMetadata.Builder()
+                    .setTitle(audio.getTitle())
+                    .build();
+        }
+
         public void bindView(Audio audio) {
+            resetAudioView();
+            binding.setAudio(audio);
+            bindAudioDurationTxt(audio);
+            initBookmarkIcon(audio);
+            initAudioView();
+        }
+
+        private void resetAudioView() {
             binding.durationTxt.setText(AppConstant.DURATION_DEFAULT);
             binding.bookmarkIcon.setContentDescription(AppConstant.BOOKMARK_BORDER_ICON);
             binding.bookmarkIcon.setImageResource(R.drawable.ic_bookmark_border);
+        }
 
-            binding.setAudio(audio);
+        private void bindAudioDurationTxt(Audio audio) {
             AudioHelper.getAudioDuration(audio.getAudioFile(), new AudioHelper.DurationCallback() {
                 @Override
                 public void onDurationReceived(String durationStr) {
@@ -133,6 +188,9 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
                     binding.durationTxt.setText(AppConstant.DURATION_DEFAULT);
                 }
             });
+        }
+
+        private void initBookmarkIcon(Audio audio) {
             if (bookmarkAudioIds != null) {
                 for (Integer id : bookmarkAudioIds) {
                     if (audio.getId() == id) {
@@ -142,36 +200,27 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
                     }
                 }
             }
+        }
+
+        private void initAudioView() {
             if (currentIndex == getAdapterPosition()) {
                 switch (status) {
                     case AppConstant.NONE:
-                        imgContentDesc = AppConstant.PLAY_ICON;
-                        iconColor = Color.parseColor("#1C89DA");
-                        textColor = Color.parseColor("#000000");
-                        imageResource = R.drawable.ic_play_circle_outline;
-                        audioBgResource = R.drawable.card_background;
+                        initAudioStatusDefault();
                         break;
                     case AppConstant.PLAY:
                         imgContentDesc = AppConstant.PAUSE_ICON;
-                        iconColor = Color.parseColor("#ffffff");
-                        textColor = Color.parseColor("#ffffff");
                         imageResource = R.drawable.ic_pause_circle_outline;
-                        audioBgResource = R.drawable.blue_btn_background;
+                        initAudioSelectedView(Color.WHITE);
                         break;
                     case AppConstant.STOP:
                         imgContentDesc = AppConstant.PLAY_ICON;
-                        iconColor = Color.parseColor("#ffffff");
-                        textColor = Color.parseColor("#ffffff");
                         imageResource = R.drawable.ic_play_circle_outline;
-                        audioBgResource = R.drawable.blue_btn_background;
+                        initAudioSelectedView(Color.WHITE);
                         break;
                 }
             } else {
-                imgContentDesc = AppConstant.PLAY_ICON;
-                iconColor = Color.parseColor("#1C89DA");
-                textColor = Color.parseColor("#000000");
-                imageResource = R.drawable.ic_play_circle_outline;
-                audioBgResource = R.drawable.card_background;
+                initAudioStatusDefault();
             }
             binding.playIcon.setContentDescription(imgContentDesc);
             binding.playIcon.setColorFilter(iconColor);
@@ -181,12 +230,26 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
             binding.audioTitle.setTextColor(textColor);
             binding.durationTxt.setTextColor(textColor);
         }
+
+        private void initAudioStatusDefault() {
+            imgContentDesc = AppConstant.PLAY_ICON;
+            iconColor = Color.parseColor("#1C89DA");
+            textColor = Color.parseColor("#000000");
+            imageResource = R.drawable.ic_play_circle_outline;
+            audioBgResource = R.drawable.card_background;
+        }
+
+        private void initAudioSelectedView(int colorCode) {
+            iconColor = textColor = colorCode;
+            audioBgResource = R.drawable.blue_btn_background;
+        }
     }
 
     public interface OnAudioClickListener {
         void onItemClick(Audio audio, int position);
 
-        void onIconClick(AudioItemLayoutBinding binding, ImageView imageView, Audio audio, int position);
+        void onIconClick(AudioItemLayoutBinding binding, ImageView imageView, Audio audio,
+                         int position, List<Audio> audioList);
     }
 
     public void searchList(String keyword) {
@@ -194,18 +257,22 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                if (keyword.isEmpty()) {
-                    audioList = dataSource;
+                if (dataSource == null) {
+                    return;
                 } else {
-                    List<Audio> temp = new ArrayList<>();
-                    for (Audio item : dataSource) {
-                        if (item.getTitle().toLowerCase().contains(keyword)) {
-                            temp.add(item);
+                    if (keyword.isEmpty()) {
+                        audioList = dataSource;
+                    } else {
+                        List<Audio> temp = new ArrayList<>();
+                        for (Audio item : dataSource) {
+                            if (item.getTitle().toLowerCase().contains(keyword)) {
+                                temp.add(item);
+                            }
                         }
+                        audioList = temp;
                     }
-                    audioList = temp;
+                    new Handler(Looper.getMainLooper()).post(() -> notifyDataSetChanged());
                 }
-                new Handler(Looper.getMainLooper()).post(() -> notifyDataSetChanged());
             }
         }, 500);
     }
