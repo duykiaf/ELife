@@ -18,6 +18,7 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <service android:name=".services.MainService"/>
+        <receiver android:name=".helper.MainReceiver"/>
         <activity
             android:name=".MainActivity"
             android:exported="true">
