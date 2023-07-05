@@ -13,26 +13,40 @@
         android:orientation="vertical"
         tools:context=".ui.AudioDetailsFragment">
 
-        <include
-            android:id="@+id/appBarFragment"
-            layout="@layout/fragment_app_bar" />
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/appBarLayout"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@color/primaryColor">
+
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/topAppBar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                app:menu="@menu/audio_menu"
+                app:navigationIcon="@drawable/ic_arrow_back"
+                app:navigationIconTint="@color/white"
+                app:title="@string/audio_details"
+                app:titleTextColor="@color/white" />
+
+        </com.google.android.material.appbar.AppBarLayout>
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="@dimen/layout_margin_horizontal"
-            android:layout_marginVertical="@dimen/layout_margin_vertical"
+            android:layout_margin="@dimen/layout_margin_horizontal"
             android:background="@drawable/card_background"
             android:padding="@dimen/padding_20dp">
 
             <TextView
                 android:id="@+id/audioTitle"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/ubuntu_bold"
                 android:includeFontPadding="false"
-                android:maxLines="1"
+                android:maxLines="2"
                 android:text="@string/audio_title"
+                android:textAlignment="center"
                 android:textColor="@color/primaryColor"
                 android:textSize="@dimen/title_txt_size"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -107,13 +121,13 @@
                 android:contentDescription="@string/app_name"
                 android:src="@drawable/ic_skip_previous"
                 app:layout_constraintBottom_toBottomOf="@id/loopIcon"
-                app:layout_constraintEnd_toStartOf="@id/pauseIcon"
+                app:layout_constraintEnd_toStartOf="@id/playOrPauseIcon"
                 app:layout_constraintStart_toEndOf="@id/loopIcon"
                 app:layout_constraintTop_toTopOf="@id/loopIcon"
                 app:tint="@color/primaryColor" />
 
             <ImageView
-                android:id="@+id/pauseIcon"
+                android:id="@+id/playOrPauseIcon"
                 android:layout_width="@dimen/large_icon_size"
                 android:layout_height="@dimen/large_icon_size"
                 android:contentDescription="@string/app_name"
@@ -132,7 +146,7 @@
                 android:src="@drawable/ic_skip_next"
                 app:layout_constraintBottom_toBottomOf="@id/loopIcon"
                 app:layout_constraintEnd_toStartOf="@id/launchIcon"
-                app:layout_constraintStart_toEndOf="@id/pauseIcon"
+                app:layout_constraintStart_toEndOf="@id/playOrPauseIcon"
                 app:layout_constraintTop_toTopOf="@id/loopIcon"
                 app:tint="@color/primaryColor" />
 
