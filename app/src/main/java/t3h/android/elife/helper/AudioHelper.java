@@ -38,7 +38,7 @@ public class AudioHelper {
         }
     }
 
-    private static String milliSecondsToTimer(int milliSeconds) {
+    public static String milliSecondsToTimer(int milliSeconds) {
         StringBuilder timerStr = new StringBuilder("");
         StringBuilder secondsStr = new StringBuilder("");
         int hours = milliSeconds / (1000 * 60 * 60);
