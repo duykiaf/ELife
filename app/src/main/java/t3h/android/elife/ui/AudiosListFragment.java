@@ -21,7 +21,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModel;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.google.android.exoplayer2.ExoPlayer;
@@ -43,6 +47,7 @@ import t3h.android.elife.models.Audio;
 import t3h.android.elife.models.Topic;
 import t3h.android.elife.repositories.MainRepository;
 import t3h.android.elife.services.MainService;
+import t3h.android.elife.viewmodels.MainViewModel;
 
 public class AudiosListFragment extends Fragment {
     private FragmentAudiosListBinding binding;
@@ -59,6 +64,9 @@ public class AudiosListFragment extends Fragment {
     private final AudioHelper audioHelper = new AudioHelper();
     private ExoPlayer player;
     private Audio audio;
+    private NavController navController;
+    private MainViewModel mainViewModel;
+    private Bundle audioInfoBundle = new Bundle();
     private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -82,6 +90,7 @@ public class AudiosListFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        navController = Navigation.findNavController(requireActivity(), R.id.navHostFragment);
         player = new ExoPlayer.Builder(requireActivity()).build();
         player.setRepeatMode(Player.REPEAT_MODE_ALL);
         isBookmarksList = requireArguments().getBoolean("isBookmarksList");
@@ -334,32 +343,6 @@ public class AudiosListFragment extends Fragment {
         });
     }
 
-    private void initPrevAndNextIcon(int audioPosition, int audioListSize) {
-        if (audioPosition == 0 && audioPosition != audioListSize - 1) {
-            setUnablePrevIcon();
-            binding.nextIcon.setColorFilter(AppConstant.ENABLE_COLOR);
-        } else if (audioPosition != 0 && audioPosition == audioListSize - 1) {
-            binding.previousIcon.setColorFilter(AppConstant.ENABLE_COLOR);
-            setUnableNextIcon();
-        } else if (audioPosition > 0 && audioPosition < audioListSize - 1) {
-            binding.previousIcon.setColorFilter(AppConstant.ENABLE_COLOR);
-            binding.nextIcon.setColorFilter(AppConstant.ENABLE_COLOR);
-        } else {
-            setUnablePrevIcon();
-            setUnableNextIcon();
-        }
-    }
-
-    private void setUnablePrevIcon() {
-        binding.previousIcon.setContentDescription(AppConstant.UNABLE_ICON);
-        binding.previousIcon.setColorFilter(AppConstant.DISABLE_COLOR);
-    }
-
-    private void setUnableNextIcon() {
-        binding.nextIcon.setContentDescription(AppConstant.UNABLE_ICON);
-        binding.nextIcon.setColorFilter(AppConstant.DISABLE_COLOR);
-    }
-
     private void initPlayOrPauseIcon(ExoPlayer player) {
         if (player.isPlaying()) {
             binding.playOrPauseIcon.setImageResource(R.drawable.ic_pause_circle_outline);
@@ -386,10 +369,13 @@ public class AudiosListFragment extends Fragment {
     }
 
     private void onItemSelected(AudiosListAdapter adapter, ExoPlayer player) {
+        mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
+        mainViewModel.setPlayer(player);
         adapter.setOnAudioClickListener(new AudiosListAdapter.OnAudioClickListener() {
             @Override
             public void onItemClick(Audio audio, int position) {
-                Toast.makeText(requireActivity(), "Open Audio Details", Toast.LENGTH_SHORT).show();
+                audioInfoBundle.putSerializable("audioInfo", audio);
+                navController.navigate(R.id.action_audiosListFragment_to_audioDetailsFragment, audioInfoBundle);
 //                playOrPauseAudioOnService(audio);
             }
 
@@ -416,7 +402,8 @@ public class AudiosListFragment extends Fragment {
                             }
                             initAudioControlLayout(adapter, audio, player);
                         } else {
-                            Toast.makeText(requireActivity(), "Open Audio Details", Toast.LENGTH_SHORT).show();
+                            audioInfoBundle.putSerializable("audioInfo", audio);
+                            navController.navigate(R.id.action_audiosListFragment_to_audioDetailsFragment, audioInfoBundle);
                         }
 //                        playOrPauseAudioOnService(audio);
                         break;
