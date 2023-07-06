@@ -7,6 +7,7 @@ import android.content.IntentFilter;
 import android.graphics.PorterDuff;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.TextWatcher;
@@ -15,6 +16,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -102,6 +104,8 @@ public class AudiosListFragment extends Fragment {
             initTopAppBarUI(true);
             loadBookmarksList(player);
         }
+        mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
+        mainViewModel.setPlayer(player);
     }
 
     private void initTopAppBarUI(boolean isBookmarksList) {
@@ -168,6 +172,9 @@ public class AudiosListFragment extends Fragment {
                     return true;
                 case R.id.bookmarksItem:
                     if (!isBookmarksList) {
+                        if (player.isPlaying()) {
+                            player.pause();
+                        }
                         initTopAppBarUI(true);
                         isBookmarksList = true;
                         resetSearchFeature(player);
@@ -264,6 +271,8 @@ public class AudiosListFragment extends Fragment {
             adapter.notifyItemChanged(adapter.getCurrentIndex());
         });
 
+        onSeekBarChangedListener(player);
+
         playerListener(adapter, player);
     }
 
@@ -295,18 +304,21 @@ public class AudiosListFragment extends Fragment {
                         adapterNotifyItemChanged(adapter, player);
                     }
                     binding.audioTitle.setText(mediaItem.mediaMetadata.title);
+                    initSeekBarAndAudioDuration(player);
                 }
             }
 
             @Override
             public void onPlaybackStateChanged(int playbackState) {
-                if (playbackState == ExoPlayer.STATE_READY) {
+                if (playbackState == ExoPlayer.STATE_READY && player.isPlaying()) {
                     binding.audioTitle.setText(Objects.requireNonNull(player.getCurrentMediaItem()).mediaMetadata.title);
+                    initSeekBarAndAudioDuration(player);
                     binding.playOrPauseIcon.setImageResource(R.drawable.ic_pause_circle_outline);
                 }
                 if (wasRemovedBookmark && !player.isPlaying() && binding != null) {
                     if (player.getCurrentMediaItem() != null) {
                         binding.audioTitle.setText(player.getCurrentMediaItem().mediaMetadata.title);
+                        initSeekBarAndAudioDuration(player);
                     }
                     binding.playOrPauseIcon.setImageResource(R.drawable.ic_play_circle_outline);
                 }
@@ -328,17 +340,42 @@ public class AudiosListFragment extends Fragment {
         adapter.notifyItemChanged(player.getCurrentMediaItemIndex());
     }
 
-    private void initAudioDuration(Audio audioInfo) {
-        binding.audioCurrentTime.setText(getResources().getString(R.string.audio_duration));
-        AudioHelper.getAudioDuration(audioInfo.getAudioFile(), new AudioHelper.DurationCallback() {
+    private void initSeekBarAndAudioDuration(ExoPlayer player) {
+        binding.audioDuration.setText(AudioHelper.milliSecondsToTimer((int) player.getDuration()));
+        binding.seekBar.setMax((int) player.getDuration());
+        binding.seekBar.setProgress((int) player.getCurrentPosition());
+        binding.audioCurrentTime.setText(AudioHelper.milliSecondsToTimer((int) player.getCurrentPosition()));
+        updatePlayerPositionProgress(player);
+    }
+
+    private void updatePlayerPositionProgress(ExoPlayer player) {
+        new Handler().postDelayed(() -> {
+            if (player.isPlaying()) {
+                binding.audioCurrentTime.setText(AudioHelper.milliSecondsToTimer((int) player.getCurrentPosition()));
+                binding.seekBar.setProgress((int) player.getCurrentPosition());
+            }
+            updatePlayerPositionProgress(player);
+        }, 1000);
+    }
+
+    private void onSeekBarChangedListener(ExoPlayer player) {
+        binding.seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            int progressValue = 0;
+
             @Override
-            public void onDurationReceived(String durationStr) {
-                binding.audioDuration.setText(durationStr);
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                progressValue = seekBar.getProgress();
             }
 
             @Override
-            public void onDurationError() {
-                binding.audioDuration.setText(AppConstant.DURATION_DEFAULT);
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                binding.seekBar.setProgress(progressValue);
+                binding.audioCurrentTime.setText(AudioHelper.milliSecondsToTimer(progressValue));
+                player.seekTo(progressValue);
             }
         });
     }
@@ -369,8 +406,6 @@ public class AudiosListFragment extends Fragment {
     }
 
     private void onItemSelected(AudiosListAdapter adapter, ExoPlayer player) {
-        mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
-        mainViewModel.setPlayer(player);
         adapter.setOnAudioClickListener(new AudiosListAdapter.OnAudioClickListener() {
             @Override
             public void onItemClick(Audio audio, int position) {
