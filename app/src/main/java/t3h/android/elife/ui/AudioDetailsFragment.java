@@ -14,9 +14,9 @@ import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
-import com.google.android.exoplayer2.MediaMetadata;
 import com.google.android.exoplayer2.Player;
 import com.google.android.material.tabs.TabLayoutMediator;
 
@@ -28,14 +28,13 @@ import t3h.android.elife.R;
 import t3h.android.elife.adapters.FragmentAdapter;
 import t3h.android.elife.databinding.FragmentAudioDetailsBinding;
 import t3h.android.elife.helper.AudioHelper;
-import t3h.android.elife.models.Audio;
 import t3h.android.elife.viewmodels.MainViewModel;
 
 public class AudioDetailsFragment extends Fragment {
     private FragmentAudioDetailsBinding binding;
-    private Audio audioInfo;
     private MainViewModel mainViewModel;
     private ExoPlayer player;
+    private boolean isTheFirstOpenTime = true;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -47,7 +46,6 @@ public class AudioDetailsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        Log.e("DNV", "onViewCreated");
         List<Fragment> fragmentList = new ArrayList<>();
         fragmentList.add(new LyricsFragment());
         fragmentList.add(new TranslationsFragment());
@@ -61,39 +59,21 @@ public class AudioDetailsFragment extends Fragment {
         ).attach();
 
         mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
-        if (requireArguments().get("audioInfo") != null) {
-            audioInfo = (Audio) requireArguments().get("audioInfo");
-            mainViewModel.setAudio(audioInfo);
-            mainViewModel.getAudioInfo().observe(requireActivity(), audio -> {
-                binding.audioTitle.setText(audio.getTitle());
-            });
-        }
 
         gettingPlayer();
     }
 
     private void gettingPlayer() {
-        Log.e("DNV", "gettingPlayer");
         mainViewModel.getPlayer().observe(requireActivity(), livePlayer -> {
             if (livePlayer != null) {
                 player = livePlayer;
-                Log.e("DNV", String.valueOf(player.getMediaItemCount()));
                 playerControls(player);
             }
         });
     }
 
     private void playerControls(ExoPlayer player) {
-        // check if the player is playing
-        if (player.isPlaying()) {
-            Log.e("DNV", "isPlaying");
-            initAudioControlLayout(player);
-        } else {
-            Log.e("DNV", "pause");
-            player.prepare();
-            player.play();
-            initAudioControlLayout(player);
-        }
+        initAudioControlLayout(player);
 
         binding.previousIcon.setOnClickListener(v -> {
             if (player.hasPreviousMediaItem()) {
@@ -114,7 +94,6 @@ public class AudioDetailsFragment extends Fragment {
                 player.pause();
                 binding.playOrPauseIcon.setImageResource(R.drawable.ic_play_circle_outline);
             } else {
-                player.prepare();
                 player.play();
                 binding.playOrPauseIcon.setImageResource(R.drawable.ic_pause_circle_outline);
             }
@@ -131,22 +110,24 @@ public class AudioDetailsFragment extends Fragment {
         player.addListener(new Player.Listener() {
             @Override
             public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {
-                assert mediaItem != null;
-                Log.e("DNV", (String) mediaItem.mediaMetadata.title);
-                binding.audioTitle.setText(mediaItem.mediaMetadata.title);
-                initAudioControlLayout(player);
-                if (!player.isPlaying()) {
-                    player.prepare();
-                    player.play();
+                Log.e("DNV", "onMediaItemTransition-details");
+                if (mediaItem != null) {
+                    binding.audioTitle.setText(mediaItem.mediaMetadata.title);
+                    mainViewModel.setAudioLyrics((String) mediaItem.mediaMetadata.description);
+                    initAudioControlLayout(player);
                 }
             }
 
             @Override
             public void onPlaybackStateChanged(int playbackState) {
+                Log.e("DNV", "onMediaItemTransition-details");
                 if (playbackState == ExoPlayer.STATE_READY) {
-                    Log.e("DNV", "ExoPlayer STATE_READY");
                     binding.audioTitle.setText(Objects.requireNonNull(player.getCurrentMediaItem()).mediaMetadata.title);
+                    mainViewModel.setAudioLyrics((String) player.getCurrentMediaItem().mediaMetadata.description);
                     initAudioControlLayout(player);
+                } else if (playbackState == ExoPlayer.STATE_IDLE) {
+                    Log.e("DNV", "ExoPlayer STATE_IDLE");
+                    binding.playOrPauseIcon.setImageResource(R.drawable.ic_play_circle_outline);
                 } else {
                     binding.playOrPauseIcon.setImageResource(R.drawable.ic_play_circle_outline);
                 }
@@ -155,7 +136,14 @@ public class AudioDetailsFragment extends Fragment {
     }
 
     private void initAudioControlLayout(ExoPlayer player) {
-        Log.e("DNV", "initAudioControlLayout");
+        if (!player.isPlaying()) {
+            if (isTheFirstOpenTime) {
+                player.seekTo((Integer) requireArguments().get("audioIndex"), C.TIME_UNSET);
+                isTheFirstOpenTime = false;
+            }
+            player.prepare();
+            player.play();
+        }
         binding.audioCurrentTime.setText(AudioHelper.milliSecondsToTimer((int) player.getCurrentPosition()));
         binding.seekBar.setProgress((int) player.getCurrentPosition());
         binding.audioDuration.setText(AudioHelper.milliSecondsToTimer((int) player.getDuration()));
@@ -165,7 +153,6 @@ public class AudioDetailsFragment extends Fragment {
     }
 
     private void updatePlayerPositionProgress(ExoPlayer player) {
-        Log.e("DNV", "updatePlayerPositionProgress");
         new Handler().postDelayed(() -> {
             if (player.isPlaying()) {
                 binding.audioCurrentTime.setText(AudioHelper.milliSecondsToTimer((int) player.getCurrentPosition()));
@@ -201,8 +188,14 @@ public class AudioDetailsFragment extends Fragment {
     public void onResume() {
         super.onResume();
         binding.topAppBar.setNavigationOnClickListener(v -> {
+            player.clearMediaItems();
             requireActivity().onBackPressed();
         });
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
     }
 
     @Override
