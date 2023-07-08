@@ -24,7 +24,6 @@
                 android:fontFamily="@font/ubuntu_regular"
                 android:includeFontPadding="false"
                 android:paddingTop="@dimen/padding_10dp"
-                android:text="@string/multiples_line_text"
                 android:textColor="@color/black"
                 android:textSize="@dimen/content_txt_size" />
         </ScrollView>
