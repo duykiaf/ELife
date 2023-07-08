@@ -10,7 +10,7 @@ import t3h.android.elife.models.Audio;
 
 public class MainViewModel extends ViewModel {
     private MutableLiveData<ExoPlayer> player = new MutableLiveData<>();
-    private MutableLiveData<Audio> audioLiveData = new MutableLiveData<>();
+    private MutableLiveData<String> audioLyrics = new MutableLiveData<>();
 
     public void setPlayer(ExoPlayer player) {
         this.player.setValue(player);
@@ -20,11 +20,11 @@ public class MainViewModel extends ViewModel {
         return player;
     }
 
-    public void setAudio(Audio audio) {
-        audioLiveData.setValue(audio);
+    public void setAudioLyrics(String audioLyrics) {
+        this.audioLyrics.setValue(audioLyrics);
     }
 
-    public LiveData<Audio> getAudioInfo() {
-        return audioLiveData;
+    public LiveData<String> getAudioLyrics() {
+        return audioLyrics;
     }
 }

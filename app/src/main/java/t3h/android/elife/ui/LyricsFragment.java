@@ -1,16 +1,15 @@
 package t3h.android.elife.ui;
 
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
 
 import t3h.android.elife.R;
 import t3h.android.elife.databinding.FragmentLyricsBinding;
@@ -30,8 +29,8 @@ public class LyricsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         MainViewModel mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
-        mainViewModel.getAudioInfo().observe(requireActivity(), audio -> {
-            binding.audioLyrics.setText(audio.getLyrics());
+        mainViewModel.getAudioLyrics().observe(requireActivity(), audioLyrics -> {
+            binding.audioLyrics.setText(audioLyrics);
         });
     }
 
