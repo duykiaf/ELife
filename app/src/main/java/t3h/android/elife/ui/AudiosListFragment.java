@@ -23,7 +23,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.navigation.NavController;
@@ -32,10 +31,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
-import com.google.android.exoplayer2.MediaMetadata;
 import com.google.android.exoplayer2.Player;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -45,6 +42,7 @@ import t3h.android.elife.databinding.AudioItemLayoutBinding;
 import t3h.android.elife.databinding.FragmentAudiosListBinding;
 import t3h.android.elife.helper.AppConstant;
 import t3h.android.elife.helper.AudioHelper;
+import t3h.android.elife.helper.ExoplayerHelper;
 import t3h.android.elife.models.Audio;
 import t3h.android.elife.models.Topic;
 import t3h.android.elife.repositories.MainRepository;
@@ -58,6 +56,7 @@ public class AudiosListFragment extends Fragment {
     private int imageResource = 0;
     private boolean isBookmarksList = false;
     private boolean isSearching = false;
+    private boolean isAudioDetailsScreen = false;
     private boolean wasRemovedBookmark;
     private Topic topicInfo;
     private AudiosListAdapter adapter = new AudiosListAdapter();
@@ -132,7 +131,7 @@ public class AudiosListFragment extends Fragment {
             if (audioList != null && audioList.size() > 0) {
                 binding.noDataTxt.setVisibility(View.GONE);
                 firstAudio = audioList.get(0);
-                player.setMediaItems(getMediaItems(audioList));
+                player.setMediaItems(ExoplayerHelper.getMediaItems(audioList));
             } else {
                 binding.noDataTxt.setVisibility(View.VISIBLE);
                 player.clearMediaItems();
@@ -148,9 +147,7 @@ public class AudiosListFragment extends Fragment {
 
     private void onBackPressed() {
         if (!binding.appBarFragment.topAppBar.getTitle().equals(AppConstant.TOPICS)) {
-            binding.appBarFragment.topAppBar.setNavigationOnClickListener(v -> {
-                requireActivity().onBackPressed();
-            });
+            binding.appBarFragment.topAppBar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
         }
     }
 
@@ -163,6 +160,7 @@ public class AudiosListFragment extends Fragment {
                     } else {
                         isSearching = true;
                         setSearchLayoutState(true);
+                        player.clearMediaItems(); // clear old media items (before searching)
                         binding.searchEdt.requestFocus();
                         binding.audioControlLayout.setVisibility(View.GONE);
                         if (!isBookmarksList) {
@@ -194,9 +192,9 @@ public class AudiosListFragment extends Fragment {
                     binding.noDataTxt.setVisibility(View.GONE);
                     Audio firstAudio = audioList.get(0);
                     if (wasRemovedBookmark) {
-                        player.setMediaItems(getMediaItems(audioList), bookmarksListAdapter.getCurrentIndex(), 0);
+                        player.setMediaItems(ExoplayerHelper.getMediaItems(audioList), bookmarksListAdapter.getCurrentIndex(), 0);
                     } else {
-                        player.setMediaItems(getMediaItems(audioList));
+                        player.setMediaItems(ExoplayerHelper.getMediaItems(audioList));
                     }
                     bookmarksListAdapter.setAudioList(audioList);
                     bookmarksListAdapter.setPlayer(player);
@@ -276,29 +274,12 @@ public class AudiosListFragment extends Fragment {
         playerListener(adapter, player);
     }
 
-    private List<MediaItem> getMediaItems(List<Audio> audioList) {
-        List<MediaItem> mediaItems = new ArrayList<>();
-        for (Audio audio : audioList) {
-            MediaItem mediaItem = new MediaItem.Builder()
-                    .setUri(audio.getAudioFile())
-                    .setMediaMetadata(getMetadata(audio))
-                    .build();
-            mediaItems.add(mediaItem);
-        }
-        return mediaItems;
-    }
-
-    private MediaMetadata getMetadata(Audio audio) {
-        return new MediaMetadata.Builder()
-                .setTitle(audio.getTitle())
-                .build();
-    }
-
     private void playerListener(AudiosListAdapter adapter, ExoPlayer player) {
         player.addListener(new Player.Listener() {
             @Override
             public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {
-                if (mediaItem != null) {
+                Log.e("DNV", "onMediaItemTransition-list");
+                if (mediaItem != null && binding != null) {
                     if (player.hasNextMediaItem() && reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
                         player.seekToNextMediaItem();
                         adapterNotifyItemChanged(adapter, player);
@@ -310,7 +291,8 @@ public class AudiosListFragment extends Fragment {
 
             @Override
             public void onPlaybackStateChanged(int playbackState) {
-                if (playbackState == ExoPlayer.STATE_READY && player.isPlaying()) {
+                if (playbackState == ExoPlayer.STATE_READY && player.isPlaying() && binding != null) {
+                    Log.e("DNV", "onPlaybackStateChanged-list");
                     binding.audioTitle.setText(Objects.requireNonNull(player.getCurrentMediaItem()).mediaMetadata.title);
                     initSeekBarAndAudioDuration(player);
                     binding.playOrPauseIcon.setImageResource(R.drawable.ic_pause_circle_outline);
@@ -350,7 +332,7 @@ public class AudiosListFragment extends Fragment {
 
     private void updatePlayerPositionProgress(ExoPlayer player) {
         new Handler().postDelayed(() -> {
-            if (player.isPlaying()) {
+            if (player.isPlaying() && binding != null) {
                 binding.audioCurrentTime.setText(AudioHelper.milliSecondsToTimer((int) player.getCurrentPosition()));
                 binding.seekBar.setProgress((int) player.getCurrentPosition());
             }
@@ -409,7 +391,8 @@ public class AudiosListFragment extends Fragment {
         adapter.setOnAudioClickListener(new AudiosListAdapter.OnAudioClickListener() {
             @Override
             public void onItemClick(Audio audio, int position) {
-                audioInfoBundle.putSerializable("audioInfo", audio);
+                isAudioDetailsScreen = true;
+                audioInfoBundle.putInt("audioIndex", position);
                 navController.navigate(R.id.action_audiosListFragment_to_audioDetailsFragment, audioInfoBundle);
 //                playOrPauseAudioOnService(audio);
             }
@@ -423,7 +406,6 @@ public class AudiosListFragment extends Fragment {
                             if (adapter.getCurrentIndex() != position) {
                                 adapter.notifyItemChanged(adapter.getCurrentIndex());
                             }
-
                             adapter.setCurrentIndex(position);
                             // play audio
                             if (imageView.getContentDescription().equals(AppConstant.PLAY_ICON)) {
@@ -437,7 +419,8 @@ public class AudiosListFragment extends Fragment {
                             }
                             initAudioControlLayout(adapter, audio, player);
                         } else {
-                            audioInfoBundle.putSerializable("audioInfo", audio);
+                            isAudioDetailsScreen = true;
+                            audioInfoBundle.putInt("audioIndex", position);
                             navController.navigate(R.id.action_audiosListFragment_to_audioDetailsFragment, audioInfoBundle);
                         }
 //                        playOrPauseAudioOnService(audio);
@@ -486,7 +469,7 @@ public class AudiosListFragment extends Fragment {
 
             @Override
             public void afterTextChanged(Editable editable) {
-                adapter.searchList(editable.toString().trim().toLowerCase());
+                adapter.searchList(editable.toString().trim().toLowerCase(), player);
             }
         });
         binding.closeSearchLayout.setOnClickListener(v -> resetSearchFeature(player));
@@ -561,6 +544,11 @@ public class AudiosListFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
         binding = null;
         if (player.isPlaying()) {
             player.stop();

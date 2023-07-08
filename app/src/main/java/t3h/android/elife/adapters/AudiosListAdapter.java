@@ -11,8 +11,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.MediaItem;
-import com.google.android.exoplayer2.MediaMetadata;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +21,7 @@ import t3h.android.elife.R;
 import t3h.android.elife.databinding.AudioItemLayoutBinding;
 import t3h.android.elife.helper.AppConstant;
 import t3h.android.elife.helper.AudioHelper;
+import t3h.android.elife.helper.ExoplayerHelper;
 import t3h.android.elife.models.Audio;
 
 public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.AudioItemViewHolder> {
@@ -118,7 +117,6 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
 
             binding.playIcon.setOnClickListener(v -> {
                 int pos = getAdapterPosition();
-                MediaItem mediaItem = getMediaItem(audioList.get(getAdapterPosition()));
                 if (player.isPlaying()) {
                     if (currentIndex == pos) {
                         player.pause();
@@ -147,19 +145,6 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
                             getAdapterPosition(), audioList);
                 }
             });
-        }
-
-        private MediaItem getMediaItem(Audio audio) {
-            return new MediaItem.Builder()
-                    .setUri(audio.getAudioFile())
-                    .setMediaMetadata(getMetadata(audio))
-                    .build();
-        }
-
-        private MediaMetadata getMetadata(Audio audio) {
-            return new MediaMetadata.Builder()
-                    .setTitle(audio.getTitle())
-                    .build();
         }
 
         public void bindView(Audio audio) {
@@ -252,7 +237,7 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
                          int position, List<Audio> audioList);
     }
 
-    public void searchList(String keyword) {
+    public void searchList(String keyword, ExoPlayer player) {
         timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override
@@ -271,7 +256,10 @@ public class AudiosListAdapter extends RecyclerView.Adapter<AudiosListAdapter.Au
                         }
                         audioList = temp;
                     }
-                    new Handler(Looper.getMainLooper()).post(() -> notifyDataSetChanged());
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        notifyDataSetChanged();
+                        player.setMediaItems(ExoplayerHelper.getMediaItems(audioList));
+                    });
                 }
             }
         }, 500);
