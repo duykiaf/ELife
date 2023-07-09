@@ -67,6 +67,11 @@ public class AudioDetailsFragment extends Fragment {
         mainViewModel.getPlayer().observe(requireActivity(), livePlayer -> {
             if (livePlayer != null) {
                 player = livePlayer;
+                mainViewModel.getRepeatModeOne().observe(requireActivity(), repeatModeOne -> {
+                    if (repeatModeOne) {
+                        player.setRepeatMode(Player.REPEAT_MODE_ONE);
+                    }
+                });
                 playerControls(player);
             }
         });
@@ -202,6 +207,8 @@ public class AudioDetailsFragment extends Fragment {
     public void onResume() {
         super.onResume();
         binding.topAppBar.setNavigationOnClickListener(v -> {
+            mainViewModel.setRepeatModeOne(false);
+            mainViewModel.setRepeatModeAll(true);
             player.clearMediaItems();
             requireActivity().onBackPressed();
         });

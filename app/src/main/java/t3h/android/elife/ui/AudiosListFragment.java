@@ -90,9 +90,14 @@ public class AudiosListFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
         navController = Navigation.findNavController(requireActivity(), R.id.navHostFragment);
         player = new ExoPlayer.Builder(requireActivity()).build();
-        player.setRepeatMode(Player.REPEAT_MODE_ALL);
+        mainViewModel.getRepeatModeAll().observe(requireActivity(), repeatModeAll -> {
+            if (repeatModeAll) {
+                player.setRepeatMode(Player.REPEAT_MODE_ALL);
+            }
+        });
         isBookmarksList = requireArguments().getBoolean("isBookmarksList");
         if (!isBookmarksList) {
             topicInfo = (Topic) requireArguments().get("topicInfo");
@@ -102,7 +107,6 @@ public class AudiosListFragment extends Fragment {
             initTopAppBarUI(true);
             loadBookmarksList(player);
         }
-        mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
         mainViewModel.setPlayer(player);
     }
 
@@ -459,7 +463,11 @@ public class AudiosListFragment extends Fragment {
         // set default state
         adapter.status = AppConstant.NONE;
         adapter.notifyItemChanged(player.getCurrentMediaItemIndex());
-        
+        adapter.setCurrentIndex(0);
+
+        mainViewModel.setRepeatModeOne(true);
+        mainViewModel.setRepeatModeAll(false);
+
         audioInfoBundle.putInt("audioIndex", getAudioIndex);
         navController.navigate(R.id.action_audiosListFragment_to_audioDetailsFragment, audioInfoBundle);
     }
