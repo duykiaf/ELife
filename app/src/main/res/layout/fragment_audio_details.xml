@@ -53,28 +53,16 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
-            <TextView
-                android:id="@+id/audioSpeed"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/ubuntu_bold"
-                android:includeFontPadding="false"
-                android:text="@string/speed_default"
-                android:textColor="@color/primaryColor"
-                android:textSize="@dimen/sub_content_txt_size"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/audioTitle" />
-
             <SeekBar
                 android:id="@+id/seekBar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/layout_margin_top_10dp"
+                android:layout_marginTop="@dimen/padding_20dp"
                 android:progressTint="@color/primaryColor"
                 android:thumbTint="@color/primaryColor"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/audioSpeed" />
+                app:layout_constraintTop_toBottomOf="@id/audioTitle" />
 
             <TextView
                 android:id="@+id/audioCurrentTime"
@@ -103,12 +91,12 @@
                 app:layout_constraintTop_toBottomOf="@id/seekBar" />
 
             <ImageView
-                android:id="@+id/loopIcon"
+                android:id="@+id/bookmarkIcon"
                 android:layout_width="@dimen/small_icon_size"
                 android:layout_height="@dimen/small_icon_size"
                 android:layout_marginTop="@dimen/layout_margin_top_10dp"
                 android:contentDescription="@string/app_name"
-                android:src="@drawable/ic_loop"
+                android:src="@drawable/ic_bookmark_border"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/audioCurrentTime"
@@ -120,10 +108,10 @@
                 android:layout_height="@dimen/large_icon_size"
                 android:contentDescription="@string/app_name"
                 android:src="@drawable/ic_skip_previous"
-                app:layout_constraintBottom_toBottomOf="@id/loopIcon"
+                app:layout_constraintBottom_toBottomOf="@id/bookmarkIcon"
                 app:layout_constraintEnd_toStartOf="@id/playOrPauseIcon"
-                app:layout_constraintStart_toEndOf="@id/loopIcon"
-                app:layout_constraintTop_toTopOf="@id/loopIcon"
+                app:layout_constraintStart_toEndOf="@id/bookmarkIcon"
+                app:layout_constraintTop_toTopOf="@id/bookmarkIcon"
                 app:tint="@color/primaryColor" />
 
             <ImageView
@@ -132,10 +120,10 @@
                 android:layout_height="@dimen/large_icon_size"
                 android:contentDescription="@string/app_name"
                 android:src="@drawable/ic_pause_circle_outline"
-                app:layout_constraintBottom_toBottomOf="@id/loopIcon"
+                app:layout_constraintBottom_toBottomOf="@id/bookmarkIcon"
                 app:layout_constraintEnd_toStartOf="@id/nextIcon"
                 app:layout_constraintStart_toEndOf="@id/previousIcon"
-                app:layout_constraintTop_toTopOf="@id/loopIcon"
+                app:layout_constraintTop_toTopOf="@id/bookmarkIcon"
                 app:tint="@color/primaryColor" />
 
             <ImageView
@@ -144,22 +132,24 @@
                 android:layout_height="@dimen/large_icon_size"
                 android:contentDescription="@string/app_name"
                 android:src="@drawable/ic_skip_next"
-                app:layout_constraintBottom_toBottomOf="@id/loopIcon"
-                app:layout_constraintEnd_toStartOf="@id/launchIcon"
+                app:layout_constraintBottom_toBottomOf="@id/bookmarkIcon"
+                app:layout_constraintEnd_toStartOf="@id/audioSpeed"
                 app:layout_constraintStart_toEndOf="@id/playOrPauseIcon"
-                app:layout_constraintTop_toTopOf="@id/loopIcon"
+                app:layout_constraintTop_toTopOf="@id/bookmarkIcon"
                 app:tint="@color/primaryColor" />
 
-            <ImageView
-                android:id="@+id/launchIcon"
-                android:layout_width="@dimen/small_icon_size"
-                android:layout_height="@dimen/small_icon_size"
-                android:contentDescription="@string/app_name"
-                android:src="@drawable/ic_bookmark_border"
-                app:layout_constraintBottom_toBottomOf="@id/loopIcon"
+            <TextView
+                android:id="@+id/audioSpeed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/ubuntu_bold"
+                android:includeFontPadding="false"
+                android:text="@string/speed_default"
+                android:textColor="@color/primaryColor"
+                android:textSize="@dimen/sub_content_txt_size"
+                app:layout_constraintBottom_toBottomOf="@id/bookmarkIcon"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="@id/loopIcon"
-                app:tint="@color/primaryColor" />
+                app:layout_constraintTop_toTopOf="@id/bookmarkIcon" />
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <androidx.constraintlayout.widget.ConstraintLayout
