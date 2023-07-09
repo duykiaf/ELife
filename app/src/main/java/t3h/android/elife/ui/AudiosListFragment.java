@@ -56,7 +56,6 @@ public class AudiosListFragment extends Fragment {
     private int imageResource = 0;
     private boolean isBookmarksList = false;
     private boolean isSearching = false;
-    private boolean isAudioDetailsScreen = false;
     private boolean wasRemovedBookmark;
     private Topic topicInfo;
     private AudiosListAdapter adapter = new AudiosListAdapter();
@@ -391,9 +390,7 @@ public class AudiosListFragment extends Fragment {
         adapter.setOnAudioClickListener(new AudiosListAdapter.OnAudioClickListener() {
             @Override
             public void onItemClick(Audio audio, int position) {
-                isAudioDetailsScreen = true;
-                audioInfoBundle.putInt("audioIndex", position);
-                navController.navigate(R.id.action_audiosListFragment_to_audioDetailsFragment, audioInfoBundle);
+                navigateToAudioDetailsFragment(adapter, position);
 //                playOrPauseAudioOnService(audio);
             }
 
@@ -419,9 +416,7 @@ public class AudiosListFragment extends Fragment {
                             }
                             initAudioControlLayout(adapter, audio, player);
                         } else {
-                            isAudioDetailsScreen = true;
-                            audioInfoBundle.putInt("audioIndex", position);
-                            navController.navigate(R.id.action_audiosListFragment_to_audioDetailsFragment, audioInfoBundle);
+                            navigateToAudioDetailsFragment(adapter, position);
                         }
 //                        playOrPauseAudioOnService(audio);
                         break;
@@ -448,6 +443,21 @@ public class AudiosListFragment extends Fragment {
                 }
             }
         });
+    }
+
+    private void navigateToAudioDetailsFragment(AudiosListAdapter adapter, int position) {
+        int getAudioIndex;
+        if (player.isPlaying()) {
+            getAudioIndex = player.getCurrentMediaItemIndex();
+            if (position != getAudioIndex) {
+                getAudioIndex = position;
+                audioInfoBundle.putBoolean("playAnotherAudio", true);
+            }
+        } else {
+            getAudioIndex = position;
+        }
+        audioInfoBundle.putInt("audioIndex", getAudioIndex);
+        navController.navigate(R.id.action_audiosListFragment_to_audioDetailsFragment, audioInfoBundle);
     }
 
     private void loadSearchList(AudiosListAdapter adapter, ExoPlayer player) {

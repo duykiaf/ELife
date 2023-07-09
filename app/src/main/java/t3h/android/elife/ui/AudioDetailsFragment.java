@@ -110,8 +110,8 @@ public class AudioDetailsFragment extends Fragment {
         player.addListener(new Player.Listener() {
             @Override
             public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {
-                Log.e("DNV", "onMediaItemTransition-details");
                 if (mediaItem != null) {
+                    Log.e("DNV", "onMediaItemTransition-details");
                     binding.audioTitle.setText(mediaItem.mediaMetadata.title);
                     mainViewModel.setAudioLyrics((String) mediaItem.mediaMetadata.description);
                     initAudioControlLayout(player);
@@ -120,8 +120,8 @@ public class AudioDetailsFragment extends Fragment {
 
             @Override
             public void onPlaybackStateChanged(int playbackState) {
-                Log.e("DNV", "onMediaItemTransition-details");
                 if (playbackState == ExoPlayer.STATE_READY) {
+                    Log.e("DNV", "onPlaybackStateChanged-details");
                     binding.audioTitle.setText(Objects.requireNonNull(player.getCurrentMediaItem()).mediaMetadata.title);
                     mainViewModel.setAudioLyrics((String) player.getCurrentMediaItem().mediaMetadata.description);
                     initAudioControlLayout(player);
@@ -138,11 +138,20 @@ public class AudioDetailsFragment extends Fragment {
     private void initAudioControlLayout(ExoPlayer player) {
         if (!player.isPlaying()) {
             if (isTheFirstOpenTime) {
-                player.seekTo((Integer) requireArguments().get("audioIndex"), C.TIME_UNSET);
                 isTheFirstOpenTime = false;
+                setUpCurrentMediaItem(player);
             }
-            player.prepare();
             player.play();
+        } else {
+            if (isTheFirstOpenTime) {
+                isTheFirstOpenTime = false;
+                if (requireArguments().get("playAnotherAudio") != null && requireArguments().getBoolean("playAnotherAudio")) {
+                    setUpCurrentMediaItem(player);
+                    player.play();
+                }
+                binding.audioTitle.setText(Objects.requireNonNull(player.getCurrentMediaItem()).mediaMetadata.title);
+                mainViewModel.setAudioLyrics((String) player.getCurrentMediaItem().mediaMetadata.description);
+            }
         }
         binding.audioCurrentTime.setText(AudioHelper.milliSecondsToTimer((int) player.getCurrentPosition()));
         binding.seekBar.setProgress((int) player.getCurrentPosition());
@@ -150,6 +159,11 @@ public class AudioDetailsFragment extends Fragment {
         binding.seekBar.setMax((int) player.getDuration());
         binding.playOrPauseIcon.setImageResource(R.drawable.ic_pause_circle_outline);
         updatePlayerPositionProgress(player);
+    }
+
+    private void setUpCurrentMediaItem(ExoPlayer player) {
+        player.seekTo((Integer) requireArguments().get("audioIndex"), C.TIME_UNSET);
+        player.prepare();
     }
 
     private void updatePlayerPositionProgress(ExoPlayer player) {
