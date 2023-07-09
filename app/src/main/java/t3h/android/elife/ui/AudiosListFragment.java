@@ -456,6 +456,10 @@ public class AudiosListFragment extends Fragment {
         } else {
             getAudioIndex = position;
         }
+        // set default state
+        adapter.status = AppConstant.NONE;
+        adapter.notifyItemChanged(player.getCurrentMediaItemIndex());
+        
         audioInfoBundle.putInt("audioIndex", getAudioIndex);
         navController.navigate(R.id.action_audiosListFragment_to_audioDetailsFragment, audioInfoBundle);
     }
