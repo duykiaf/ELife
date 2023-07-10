@@ -64,20 +64,25 @@ public class AudioDetailsFragment extends Fragment {
     }
 
     private void gettingPlayer() {
-        mainViewModel.getPlayer().observe(requireActivity(), livePlayer -> {
-            if (livePlayer != null) {
-                player = livePlayer;
-                mainViewModel.getRepeatModeOne().observe(requireActivity(), repeatModeOne -> {
-                    if (repeatModeOne) {
-                        player.setRepeatMode(Player.REPEAT_MODE_ONE);
-                    }
-                });
-                playerControls(player);
-            }
-        });
+        if (isAdded()) {
+            mainViewModel.getPlayer().observe(requireActivity(), livePlayer -> {
+                if (livePlayer != null) {
+                    player = livePlayer;
+                    playerControls(player);
+                }
+            });
+        }
     }
 
     private void playerControls(ExoPlayer player) {
+        if (isAdded()) {
+            mainViewModel.getRepeatModeOne().observe(requireActivity(), repeatModeOne -> {
+                if (repeatModeOne) {
+                    player.setRepeatMode(Player.REPEAT_MODE_ONE);
+                }
+            });
+        }
+
         initAudioControlLayout(player);
 
         binding.previousIcon.setOnClickListener(v -> {
@@ -210,7 +215,9 @@ public class AudioDetailsFragment extends Fragment {
             mainViewModel.setRepeatModeOne(false);
             mainViewModel.setRepeatModeAll(true);
             player.clearMediaItems();
-            requireActivity().onBackPressed();
+            if (isAdded()) {
+                requireActivity().onBackPressed();
+            }
         });
     }
 
