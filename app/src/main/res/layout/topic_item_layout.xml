@@ -33,6 +33,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/layout_margin_top_10dp"
+            android:ellipsize="end"
             android:fontFamily="@font/ubuntu_bold"
             android:includeFontPadding="false"
             android:maxLines="3"
