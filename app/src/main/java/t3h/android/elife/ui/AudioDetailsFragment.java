@@ -43,6 +43,7 @@ public class AudioDetailsFragment extends Fragment {
     private int bookmarkStyleResource = 0;
     private String bookmarkContentDesc;
     private final AudioHelper audioHelper = new AudioHelper();
+    private MainRepository mainRepoForDao;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -56,6 +57,7 @@ public class AudioDetailsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         initViewPager();
         mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
+        mainRepoForDao = new MainRepository(requireActivity().getApplication());
         gettingPlayer();
     }
 
@@ -174,7 +176,9 @@ public class AudioDetailsFragment extends Fragment {
         binding.audioDuration.setText(AudioHelper.milliSecondsToTimer((int) player.getDuration()));
         binding.seekBar.setMax((int) player.getDuration());
         binding.playOrPauseIcon.setImageResource(R.drawable.ic_pause_circle_outline);
-        initBookmarkIcon(player);
+        if (isAdded()) {
+            initBookmarkIcon(player);
+        }
         updatePlayerPositionProgress(player);
     }
 
@@ -190,7 +194,11 @@ public class AudioDetailsFragment extends Fragment {
 
     private void checkBookmarkStatus(int audioSelectedId) {
         if (isAdded()) {
-            MainRepository mainRepoForDao = new MainRepository(requireActivity().getApplication());
+            // set default icon info
+            binding.bookmarkIcon.setImageResource(R.drawable.ic_bookmark_border);
+            binding.bookmarkIcon.setContentDescription(AppConstant.BOOKMARK_BORDER_ICON);
+
+            // check icon status
             mainRepoForDao.getAudioIds().observe(requireActivity(), bookmarkIds -> {
                 for (Integer id : bookmarkIds) {
                     if (audioSelectedId == id) {
@@ -204,7 +212,7 @@ public class AudioDetailsFragment extends Fragment {
     }
 
     private int getCurrentAudioId(ExoPlayer player) {
-        return (int) (Objects.requireNonNull(Objects.requireNonNull(player.getCurrentMediaItem()).mediaMetadata.extras)).get("audioId");
+        return (int) (player.getCurrentMediaItem().mediaMetadata.extras).get("audioId");
     }
 
     private void updatePlayerPositionProgress(ExoPlayer player) {
@@ -242,7 +250,9 @@ public class AudioDetailsFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        onBackPressed();
+        if (isAdded()) {
+            onBackPressed();
+        }
     }
 
     private void onBackPressed() {
@@ -250,9 +260,7 @@ public class AudioDetailsFragment extends Fragment {
             mainViewModel.setRepeatModeOne(false);
             mainViewModel.setRepeatModeAll(true);
             player.clearMediaItems();
-            if (isAdded()) {
-                requireActivity().onBackPressed();
-            }
+            requireActivity().onBackPressed();
         });
     }
 
@@ -299,8 +307,20 @@ public class AudioDetailsFragment extends Fragment {
             if (deletedRow > 0) {
                 Toast.makeText(requireActivity(), AppConstant.REMOVE_BOOKMARK_SUCCESSFULLY, Toast.LENGTH_SHORT).show();
                 initBookmarkIcon(player);
+                if (requireArguments().getBoolean("isBookmarksList")) {
+                    // check if audioIds null, back pressed bookmarks list screen
+                    checkBookmarksList();
+                }
             } else {
                 Toast.makeText(requireActivity(), AppConstant.REMOVE_BOOKMARK_FAILED, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void checkBookmarksList() {
+        mainRepoForDao.getBookmarksList().observe(requireActivity(), list -> {
+            if (list.isEmpty() && isAdded()) {
+                requireActivity().onBackPressed();
             }
         });
     }
