@@ -281,7 +281,6 @@ public class AudiosListFragment extends Fragment {
         player.addListener(new Player.Listener() {
             @Override
             public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {
-                Log.e("DNV", "onMediaItemTransition-list");
                 if (mediaItem != null && binding != null) {
                     if (player.hasNextMediaItem() && reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
                         player.seekToNextMediaItem();
@@ -295,7 +294,6 @@ public class AudiosListFragment extends Fragment {
             @Override
             public void onPlaybackStateChanged(int playbackState) {
                 if (playbackState == ExoPlayer.STATE_READY && player.isPlaying() && binding != null) {
-                    Log.e("DNV", "onPlaybackStateChanged-list");
                     binding.audioTitle.setText(Objects.requireNonNull(player.getCurrentMediaItem()).mediaMetadata.title);
                     initSeekBarAndAudioDuration(player);
                     binding.playOrPauseIcon.setImageResource(R.drawable.ic_pause_circle_outline);
@@ -469,6 +467,7 @@ public class AudiosListFragment extends Fragment {
         mainViewModel.setRepeatModeAll(false);
 
         audioInfoBundle.putInt("audioIndex", getAudioIndex);
+        audioInfoBundle.putBoolean("isBookmarksList", isBookmarksList);
         navController.navigate(R.id.action_audiosListFragment_to_audioDetailsFragment, audioInfoBundle);
     }
 
