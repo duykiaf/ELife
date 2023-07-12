@@ -24,4 +24,5 @@ public class AppConstant {
     public static final String CHANNEL_ID = "t3h.android.elife.ELIFE_CHANNEL";
     public static final String CHANNEL_NAME = "Elife";
     public static final int NOTIFICATION_ID = 1;
+    public static final String SYSTEM_ERROR = "System error. Please try again!";
 }
