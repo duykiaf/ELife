@@ -96,7 +96,7 @@
                 android:layout_width="@dimen/small_icon_size"
                 android:layout_height="@dimen/small_icon_size"
                 android:layout_marginTop="@dimen/layout_margin_top_10dp"
-                android:contentDescription="@string/app_name"
+                android:contentDescription="@string/bookmark_border_icon"
                 android:src="@drawable/ic_bookmark_border"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
