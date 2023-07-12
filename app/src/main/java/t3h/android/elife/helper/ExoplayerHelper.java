@@ -1,5 +1,7 @@
 package t3h.android.elife.helper;
 
+import android.os.Bundle;
+
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.MediaMetadata;
 
@@ -22,7 +24,10 @@ public class ExoplayerHelper {
     }
 
     public static MediaMetadata getMetadata(Audio audio) {
+        Bundle bundle = new Bundle();
+        bundle.putInt("audioId", audio.getId());
         return new MediaMetadata.Builder()
+                .setExtras(bundle)
                 .setTitle(audio.getTitle())
                 .setDescription(audio.getLyrics())
                 .build();
