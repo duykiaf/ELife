@@ -63,6 +63,22 @@ public class MainRepository {
         return liveData;
     }
 
+    public LiveData<List<Audio>> getAudioById(int audioId) {
+        MutableLiveData<List<Audio>> liveData = new MutableLiveData<>(new ArrayList<>());
+        mainApi.getAudioById(audioId).enqueue(new Callback<List<Audio>>() {
+            @Override
+            public void onResponse(Call<List<Audio>> call, Response<List<Audio>> response) {
+                liveData.setValue(response.body());
+            }
+
+            @Override
+            public void onFailure(Call<List<Audio>> call, Throwable t) {
+                Log.e("ERROR getAudioById", t.getMessage());
+            }
+        });
+        return liveData;
+    }
+
     public Long addBookmark(Audio audio) {
         if (audio != null) {
             return audioDao.insert(audio);

@@ -14,4 +14,7 @@ public interface MainApi {
 
     @GET("/audio/get-list-by-topic/{topicId}")
     Call<List<Audio>> getActiveAudiosListByTopic(@Path("topicId") int topicId);
+
+    @GET("/audio/get-by-id/{id}")
+    Call<List<Audio>> getAudioById(@Path("id") int audioId);
 }
