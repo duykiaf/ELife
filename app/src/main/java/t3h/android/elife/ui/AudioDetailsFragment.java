@@ -1,5 +1,6 @@
 package t3h.android.elife.ui;
 
+import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -7,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.SeekBar;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -27,7 +29,10 @@ import java.util.Objects;
 import t3h.android.elife.R;
 import t3h.android.elife.adapters.FragmentAdapter;
 import t3h.android.elife.databinding.FragmentAudioDetailsBinding;
+import t3h.android.elife.helper.AppConstant;
 import t3h.android.elife.helper.AudioHelper;
+import t3h.android.elife.models.Audio;
+import t3h.android.elife.repositories.MainRepository;
 import t3h.android.elife.viewmodels.MainViewModel;
 
 public class AudioDetailsFragment extends Fragment {
@@ -35,6 +40,9 @@ public class AudioDetailsFragment extends Fragment {
     private MainViewModel mainViewModel;
     private ExoPlayer player;
     private boolean isTheFirstOpenTime = true;
+    private int bookmarkStyleResource = 0;
+    private String bookmarkContentDesc;
+    private final AudioHelper audioHelper = new AudioHelper();
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -46,6 +54,12 @@ public class AudioDetailsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        initViewPager();
+        mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
+        gettingPlayer();
+    }
+
+    private void initViewPager() {
         List<Fragment> fragmentList = new ArrayList<>();
         fragmentList.add(new LyricsFragment());
         fragmentList.add(new TranslationsFragment());
@@ -57,21 +71,15 @@ public class AudioDetailsFragment extends Fragment {
         new TabLayoutMediator(binding.tabLayout, binding.pager,
                 (tab, position) -> tab.setText(tabLayoutNames[position])
         ).attach();
-
-        mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
-
-        gettingPlayer();
     }
 
     private void gettingPlayer() {
-        if (isAdded()) {
-            mainViewModel.getPlayer().observe(requireActivity(), livePlayer -> {
-                if (livePlayer != null) {
-                    player = livePlayer;
-                    playerControls(player);
-                }
-            });
-        }
+        mainViewModel.getPlayer().observe(requireActivity(), livePlayer -> {
+            if (livePlayer != null) {
+                player = livePlayer;
+                playerControls(player);
+            }
+        });
     }
 
     private void playerControls(ExoPlayer player) {
@@ -121,7 +129,6 @@ public class AudioDetailsFragment extends Fragment {
             @Override
             public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {
                 if (mediaItem != null) {
-                    Log.e("DNV", "onMediaItemTransition-details");
                     binding.audioTitle.setText(mediaItem.mediaMetadata.title);
                     mainViewModel.setAudioLyrics((String) mediaItem.mediaMetadata.description);
                     initAudioControlLayout(player);
@@ -131,12 +138,11 @@ public class AudioDetailsFragment extends Fragment {
             @Override
             public void onPlaybackStateChanged(int playbackState) {
                 if (playbackState == ExoPlayer.STATE_READY) {
-                    Log.e("DNV", "onPlaybackStateChanged-details");
                     binding.audioTitle.setText(Objects.requireNonNull(player.getCurrentMediaItem()).mediaMetadata.title);
                     mainViewModel.setAudioLyrics((String) player.getCurrentMediaItem().mediaMetadata.description);
                     initAudioControlLayout(player);
                 } else if (playbackState == ExoPlayer.STATE_IDLE) {
-                    Log.e("DNV", "ExoPlayer STATE_IDLE");
+                    Log.e("DNV", "STATE_IDLE");
                     binding.playOrPauseIcon.setImageResource(R.drawable.ic_play_circle_outline);
                 } else {
                     binding.playOrPauseIcon.setImageResource(R.drawable.ic_play_circle_outline);
@@ -168,12 +174,37 @@ public class AudioDetailsFragment extends Fragment {
         binding.audioDuration.setText(AudioHelper.milliSecondsToTimer((int) player.getDuration()));
         binding.seekBar.setMax((int) player.getDuration());
         binding.playOrPauseIcon.setImageResource(R.drawable.ic_pause_circle_outline);
+        initBookmarkIcon(player);
         updatePlayerPositionProgress(player);
     }
 
     private void setUpCurrentMediaItem(ExoPlayer player) {
         player.seekTo((Integer) requireArguments().get("audioIndex"), C.TIME_UNSET);
         player.prepare();
+    }
+
+    private void initBookmarkIcon(ExoPlayer player) {
+        checkBookmarkStatus(getCurrentAudioId(player));
+        setBookmark(player);
+    }
+
+    private void checkBookmarkStatus(int audioSelectedId) {
+        if (isAdded()) {
+            MainRepository mainRepoForDao = new MainRepository(requireActivity().getApplication());
+            mainRepoForDao.getAudioIds().observe(requireActivity(), bookmarkIds -> {
+                for (Integer id : bookmarkIds) {
+                    if (audioSelectedId == id) {
+                        binding.bookmarkIcon.setImageResource(R.drawable.ic_bookmark);
+                        binding.bookmarkIcon.setContentDescription(AppConstant.BOOKMARK_ICON);
+                        break;
+                    }
+                }
+            });
+        }
+    }
+
+    private int getCurrentAudioId(ExoPlayer player) {
+        return (int) (Objects.requireNonNull(Objects.requireNonNull(player.getCurrentMediaItem()).mediaMetadata.extras)).get("audioId");
     }
 
     private void updatePlayerPositionProgress(ExoPlayer player) {
@@ -211,6 +242,10 @@ public class AudioDetailsFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        onBackPressed();
+    }
+
+    private void onBackPressed() {
         binding.topAppBar.setNavigationOnClickListener(v -> {
             mainViewModel.setRepeatModeOne(false);
             mainViewModel.setRepeatModeAll(true);
@@ -221,9 +256,53 @@ public class AudioDetailsFragment extends Fragment {
         });
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
+    private void setBookmark(ExoPlayer player) {
+        MainRepository mainRepository = new MainRepository();
+        binding.bookmarkIcon.setOnClickListener(v -> {
+            if (binding.bookmarkIcon.getContentDescription().equals(AppConstant.BOOKMARK_BORDER_ICON)) {
+                bookmarkStyleResource = R.drawable.ic_bookmark;
+                bookmarkContentDesc = AppConstant.BOOKMARK_ICON;
+                // add bookmark here
+                mainRepository.getAudioById(getCurrentAudioId(player)).observe(requireActivity(), result -> {
+                    if (result != null && result.size() > 0) {
+                        addBookmark(result.get(0));
+                    }
+                });
+            } else {
+                bookmarkStyleResource = R.drawable.ic_bookmark_border;
+                bookmarkContentDesc = AppConstant.BOOKMARK_BORDER_ICON;
+                // remove bookmark here
+                mainRepository.getAudioById(getCurrentAudioId(player)).observe(requireActivity(), result -> {
+                    if (result != null && result.size() > 0) {
+                        removeBookmark(result.get(0), player);
+                    }
+                });
+            }
+            binding.bookmarkIcon.setImageResource(bookmarkStyleResource);
+            binding.bookmarkIcon.setContentDescription(bookmarkContentDesc);
+            binding.bookmarkIcon.setColorFilter(getResources().getColor(R.color.primaryColor), PorterDuff.Mode.MULTIPLY);
+        });
+    }
+
+    private void addBookmark(Audio audioSelected) {
+        audioHelper.addBookmark(requireActivity(), audioSelected, audioId -> {
+            if (audioId > 0) {
+                Toast.makeText(requireActivity(), AppConstant.ADD_BOOKMARK_SUCCESSFULLY, Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(requireActivity(), AppConstant.ADD_BOOKMARK_FAILED, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void removeBookmark(Audio audioSelected, ExoPlayer player) {
+        audioHelper.removeBookmark(requireActivity(), audioSelected, deletedRow -> {
+            if (deletedRow > 0) {
+                Toast.makeText(requireActivity(), AppConstant.REMOVE_BOOKMARK_SUCCESSFULLY, Toast.LENGTH_SHORT).show();
+                initBookmarkIcon(player);
+            } else {
+                Toast.makeText(requireActivity(), AppConstant.REMOVE_BOOKMARK_FAILED, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override
