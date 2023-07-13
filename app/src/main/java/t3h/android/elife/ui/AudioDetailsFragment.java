@@ -1,17 +1,22 @@
 package t3h.android.elife.ui;
 
 import android.graphics.PorterDuff;
+import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.SeekBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
@@ -19,6 +24,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
+import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
 import com.google.android.material.tabs.TabLayoutMediator;
 
@@ -44,6 +50,10 @@ public class AudioDetailsFragment extends Fragment {
     private String bookmarkContentDesc;
     private final AudioHelper audioHelper = new AudioHelper();
     private MainRepository mainRepoForDao;
+    private AlertDialog speedSettingDialog;
+    private String audioSpeedStr;
+    private float audioSpeedValue;
+    private PlaybackParameters playbackParameters;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -59,6 +69,7 @@ public class AudioDetailsFragment extends Fragment {
         mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
         mainRepoForDao = new MainRepository(requireActivity().getApplication());
         gettingPlayer();
+        binding.audioSpeed.setOnClickListener(v -> showSpeedSettingDialog(view));
     }
 
     private void initViewPager() {
@@ -261,6 +272,61 @@ public class AudioDetailsFragment extends Fragment {
             mainViewModel.setRepeatModeAll(true);
             player.clearMediaItems();
             requireActivity().onBackPressed();
+        });
+    }
+
+    private void showSpeedSettingDialog(View v) {
+        if (speedSettingDialog == null) {
+            View view = LayoutInflater.from(requireActivity()).inflate(
+                    R.layout.playback_speed_dialog, v.findViewById(R.id.playbackSpeedDialog)
+            );
+            initSpeedSettingDialog(view);
+            RadioGroup radioGroup = view.findViewById(R.id.playbackSpeedRG);
+            setRadioCheckedDefault(view);
+            onCheckedRadioBtnChangeListener(view, radioGroup);
+            view.findViewById(R.id.closeBtn).setOnClickListener(s -> speedSettingDialog.dismiss());
+        }
+        speedSettingDialog.show();
+    }
+
+    private void initSpeedSettingDialog(View view) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity());
+        builder.setView(view);
+        speedSettingDialog = builder.create();
+        if (speedSettingDialog.getWindow() != null) {
+            speedSettingDialog.getWindow().setBackgroundDrawable(new ColorDrawable(0));
+        }
+    }
+
+    private void setRadioCheckedDefault(View view) {
+        RadioButton radioCheckedDefault = view.findViewById(R.id.radioCheckedDefault);
+        radioCheckedDefault.setChecked(true);
+    }
+
+    private void onCheckedRadioBtnChangeListener(View view, RadioGroup radioGroup) {
+        radioGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            RadioButton radioButton = view.findViewById(checkedId);
+            audioSpeedStr = radioButton.getText().toString();
+            switch (audioSpeedStr) {
+                case "0.5x":
+                    audioSpeedValue = 0.5f;
+                    break;
+                case "0.75x":
+                    audioSpeedValue = 0.75f;
+                    break;
+                case "1x":
+                    audioSpeedValue = 1f;
+                    break;
+                case "1.25x":
+                    audioSpeedValue = 1.25f;
+                    break;
+                case "1.5x":
+                    audioSpeedValue = 1.5f;
+                    break;
+            }
+            playbackParameters = new PlaybackParameters(audioSpeedValue);
+            binding.audioSpeed.setText(radioButton.getText().toString());
+            player.setPlaybackParameters(playbackParameters);
         });
     }
 
