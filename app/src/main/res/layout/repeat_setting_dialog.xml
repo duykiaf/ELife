@@ -80,7 +80,7 @@
         android:background="@drawable/secondary_btn_background"
         android:fontFamily="@font/ubuntu_bold"
         android:includeFontPadding="false"
-        android:text="@string/cancel"
+        android:text="@string/close"
         android:textAllCaps="false"
         android:textColor="@color/black"
         android:textSize="@dimen/content_txt_size"
