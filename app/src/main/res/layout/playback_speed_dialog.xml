@@ -40,7 +40,8 @@
             android:text="@string/_0_75x" />
 
         <RadioButton
-            style="@style/RadioCheckedStyle"
+            android:id="@+id/radioCheckedDefault"
+            style="@style/RadioButtonStyle"
             android:text="@string/_1x_normal" />
 
         <RadioButton
@@ -54,36 +55,20 @@
     </RadioGroup>
 
     <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/saveBtn"
-        android:layout_width="wrap_content"
+        android:id="@+id/closeBtn"
+        android:layout_width="match_parent"
         android:layout_height="@dimen/button_size"
         android:layout_marginTop="@dimen/layout_margin_vertical"
-        android:background="@drawable/blue_btn_background"
-        android:fontFamily="@font/ubuntu_bold"
-        android:includeFontPadding="false"
-        android:text="@string/save"
-        android:textAllCaps="false"
-        android:textColor="@color/white"
-        android:textSize="@dimen/content_txt_size"
-        app:layout_constraintEnd_toStartOf="@id/cancelBtn"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/playbackSpeedRG"
-        tools:ignore="MissingConstraints" />
-
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/cancelBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="@dimen/button_size"
         android:background="@drawable/secondary_btn_background"
         android:fontFamily="@font/ubuntu_bold"
         android:includeFontPadding="false"
-        android:text="@string/cancel"
+        android:text="@string/close"
         android:textAllCaps="false"
         android:textColor="@color/black"
         android:textSize="@dimen/content_txt_size"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/saveBtn"
-        app:layout_constraintTop_toTopOf="@id/saveBtn"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/playbackSpeedRG"
         tools:ignore="MissingConstraints" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
