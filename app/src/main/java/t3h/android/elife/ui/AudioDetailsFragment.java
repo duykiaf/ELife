@@ -1,7 +1,6 @@
 package t3h.android.elife.ui;
 
 import android.graphics.PorterDuff;
-import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.Handler;
