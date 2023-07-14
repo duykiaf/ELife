@@ -14,7 +14,6 @@ import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.google.android.gms.tasks.Task;
 import com.google.mlkit.common.model.DownloadConditions;
 import com.google.mlkit.common.model.RemoteModelManager;
 import com.google.mlkit.nl.translate.TranslateLanguage;
@@ -23,8 +22,10 @@ import com.google.mlkit.nl.translate.Translation;
 import com.google.mlkit.nl.translate.Translator;
 import com.google.mlkit.nl.translate.TranslatorOptions;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 import t3h.android.elife.R;
 import t3h.android.elife.databinding.FragmentTranslationsBinding;
@@ -192,14 +193,46 @@ public class TranslationsFragment extends Fragment {
 
     private void initLyricsTranslation(Translator translator) {
         mainViewModel.getAudioLyrics().observe(requireActivity(), lyrics -> {
-            Task<String> test = translator.translate(lyrics)
-                    .addOnSuccessListener(result -> {
+            String[] sentences = lyrics.split("\n");
+            // translation tasks list
+            List<CompletableFuture<String>> translationFutures = new ArrayList<>();
+
+            for (String sentence : sentences) {
+                // CompletableFuture is created for each translation task
+                CompletableFuture<String> translationFuture = new CompletableFuture<>();
+                translationFutures.add(translationFuture);
+
+                translator.translate(sentence)
+                        .addOnSuccessListener(translationFuture::complete)
+                        .addOnFailureListener(translationFuture::completeExceptionally);
+            }
+
+            // when all the translation futures to complete
+            CompletableFuture.allOf(translationFutures.toArray(new CompletableFuture[0]))
+                    .thenApply(ignored -> {
+                        StringBuilder lyricsTranslationResult = new StringBuilder();
+                        for (CompletableFuture<String> translationFuture : translationFutures) {
+                            try {
+                                String result = translationFuture.get();
+                                lyricsTranslationResult.append(result).append("\n");
+                            } catch (Exception e) {
+                                // Handle translation failure
+                                lyricsTranslationResult.append(AppConstant.TRANSLATION_FAILED);
+                            }
+                        }
+                        return lyricsTranslationResult.toString();
+                    })
+                    .thenAccept(result -> {
                         binding.progressBar.setVisibility(View.GONE);
                         binding.lyricsTranslation.setText(result);
                     })
-                    .addOnFailureListener(e -> Toast.makeText(requireActivity(), AppConstant.SYSTEM_ERROR, Toast.LENGTH_SHORT).show());
+                    .exceptionally(e -> {
+                        // Handle exceptions
+                        return null;
+                    });
         });
     }
+
 
     private void deleteOldTargetLanguage(String code) {
         TranslateRemoteModel oldTargetLanguageModel = new TranslateRemoteModel.Builder(code).build();
