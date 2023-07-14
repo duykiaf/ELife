@@ -26,4 +26,5 @@ public class AppConstant {
     public static final int NOTIFICATION_ID = 1;
     public static final String SYSTEM_ERROR = "System error. Please try again!";
     public static final String CHOOSE_TRANSLATE_LANGUAGE = "Please choose the translation language";
+    public static final String TRANSLATION_FAILED = "Translation failed";
 }
